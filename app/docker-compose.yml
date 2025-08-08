@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./paes
+    container_name: backend-paes
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./paes:/app
+    command: python manage.py runserver 0.0.0.0:8000
+    restart: always
+
+  frontend:
+    build:
+      context: ./vue
+    container_name: frontend-vue
+    ports:
+      - "5173:80"
+    restart: always

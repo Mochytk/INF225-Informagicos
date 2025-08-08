@@ -1,0 +1,13 @@
+Admin:
+Usuario: admin
+Contraseña: ponganmeun100 
+
+Alumno:
+Usuario: alumno
+Correo: a@a.com
+Contraseña: estudiante
+
+Docente:
+Usuario: rodri_profe
+Correo: hola@hotmail.com
+Contraseña: rodrigoat
