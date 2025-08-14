@@ -1,16 +1,16 @@
-# INF236-GRUPO-13
+# INF236-Informágicos
 
-Este es el repositorio del *Grupo 13*, cuyos integrantes son:
+Este es el repositorio de *Informágicos*, cuyos integrantes son:
 * Rodrigo Ariel Cáceres Gaete - 202273616-k
 * Martin Ignacio Ferrera Borquez - 202273552-K
 * Sergio Roberto Rojas Gutiérrez - 202273619-4
 * José Andrés Yáñez Chávez - 202273508-2
-* **Tutor**: Javiera Osorio
+* **Tutor**: Carlos Arevalo
 
 ## Wiki
-Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF236-GRUPO-13/wiki)
+Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF236-Informagicos/wiki)
 
-## Videos
+## Videos (INF-236)
 * [Video Hito 3](https://youtu.be/u5LrkK-0U38)
 * [Video Hito 5](https://youtu.be/ra4RlnNAZF0)
 
