@@ -8,7 +8,7 @@ Este es el repositorio de *Informágicos*, cuyos integrantes son:
 * **Tutor**: Carlos Arevalo
 
 ## Wiki
-Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF236-Informagicos/wiki)
+Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki)
 
 ## Videos (INF-236)
 * [Video Hito 3](https://youtu.be/u5LrkK-0U38)
