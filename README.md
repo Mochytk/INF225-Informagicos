@@ -1,4 +1,4 @@
-# INF236-Informágicos
+# INF225-Informágicos
 
 Este es el repositorio de *Informágicos*, cuyos integrantes son:
 * Rodrigo Ariel Cáceres Gaete - 202273616-k
@@ -7,6 +7,7 @@ Este es el repositorio de *Informágicos*, cuyos integrantes son:
 * José Andrés Yáñez Chávez - 202273508-2
 * **Tutor**: Carlos Arevalo
 
+# Sección INF-236
 ## Wiki
 Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki)
 
