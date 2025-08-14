@@ -1,24 +1,24 @@
-# INF225 - Informágicos
+# INF236-GRUPO-13
 
-Este es el repositorio de los *Informágicos*, cuyos integrantes son:
+Este es el repositorio del *Grupo 13*, cuyos integrantes son:
 * Rodrigo Ariel Cáceres Gaete - 202273616-k
 * Martin Ignacio Ferrera Borquez - 202273552-K
 * Sergio Roberto Rojas Gutiérrez - 202273619-4
 * José Andrés Yáñez Chávez - 202273508-2
-* **Tutor**: 
+* **Tutor**: Javiera Osorio
 
 ## Wiki
-Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki)
+Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF236-GRUPO-13/wiki)
 
 ## Videos
-* [Video Hito 3]()
-* [Video Hito 5]()
+* [Video Hito 3](https://youtu.be/u5LrkK-0U38)
+* [Video Hito 5](https://youtu.be/ra4RlnNAZF0)
 
 ## Aspectos técnicos relevantes
 ### Configuración inicial
 El primer paso para hacer funcionar la página es clonar el repositorio. Para ello, se puede hacer uso de GitHub Desktop o del siguiente comando:
 
-`git clone https://github.com/Mochytk/INF225-Informagicos.git`
+`git clone https://github.com/Mochytk/INF236-GRUPO-13.git`
 
 Además, se deben instalar las siguientes aplicaciones:
 - Python 3.12 o posterior
@@ -31,7 +31,7 @@ Una vez cumplidos estos requisitos, se deberán ejecutar los siguientes comandos
 - `pip install djangorestframework`
 - `pip install django-cors-headers`
 - `pip install djangorestframework-simplejwt`
-- `python -m pip install Pillow`
+- `python -m pip install Pillow` ¡¡¡NUEVO!!!  
 
 ### Desplegar el proyecto (Sin Docker)
 Una vez finalizada la configuración inicial, debemos hacer funcionar la página. Para ello, lo primero será inicializar el backend (Django + Django REST), para lo cual abrimos la terminal desde la carpeta "paes" y ejecutamos el siguiente comando:
@@ -48,7 +48,7 @@ Nota: el comando `npm install` solo es necesario para la primera ejecución.
 
 Finalmente para acceder a la página se debe copiar la url que se indice en 'Local:', y pegarla en su buscador de preferencia donde se podrá navegar como desee.
 
-### Desplegar el proyecto (Con Docker)
+### Desplegar el proyecto (Con Docker) ¡¡¡NUEVO!!!
 Este nuevo método necesita tener el software 'Docker-Desktop' instalado (link para su instalación: https://www.docker.com/products/docker-desktop/). Se sigue un procedimiento similar: primero abrimos la terminal y nos dirigimos a la carpeta 'app', una vez ahí se ejecuta el siguiente comando que desplegará automáticamente tanto el backend como el frontend del proyecto:
 
 `docker-compose up --build`
