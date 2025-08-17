@@ -1,11 +1,11 @@
 # INF225-Informágicos
 
-Este es el repositorio de *Informágicos*, cuyos integrantes son:
+Este es el repositorio del grupo *Informágicos* (Grupo 1), cuyos integrantes son:
 * Rodrigo Ariel Cáceres Gaete - 202273616-k
 * Martin Ignacio Ferrera Borquez - 202273552-K
 * Sergio Roberto Rojas Gutiérrez - 202273619-4
 * José Andrés Yáñez Chávez - 202273508-2
-* **Tutor**: Carlos Arevalo
+* **Tutor**: Carlos Arévalo
 
 # Sección INF-236
 ## Wiki
