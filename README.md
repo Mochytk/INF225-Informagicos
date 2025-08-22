@@ -7,9 +7,15 @@ Este es el repositorio del grupo *Informágicos* (Grupo 1), cuyos integrantes so
 * José Andrés Yáñez Chávez - 202273508-2
 * **Tutor**: Carlos Arévalo
 
-# Sección INF-236
+# Sección INF-225
+## Contexto
+Durante el transcurso de este semestre vamos a continuar trabajando sobre la base que establecimos en el ramo de INF-236 Análisis y Diseño de Software. El proyecto busca generar una plataforma para que alumnos de colegios adheridos a la SIP puedan desarrollar ensayos tipo PAES para prepararse para la prueba.
 ## Wiki
 Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki)
+
+# Sección INF-236
+## Wiki
+Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki) (_Es el link que el anterior, la wiki fue copiada_)
 
 ## Videos (INF-236)
 * [Video Hito 3](https://youtu.be/u5LrkK-0U38)
