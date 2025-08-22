@@ -135,5 +135,5 @@ hint: See PEP 668 for the detailed specification.
   -> Solución: Es posible cambiar la configuración de cómo se gestionan los paquetes del sistema usando el siguiente comando: `python3 -m pip config set global.break-system-packages true`.
 
 ### El proyecto está basado en la documentación disponible en:
-- Sección [Servicios](https://github.com/Mochytk/INF236-GRUPO-13/wiki/Servicios) de la [Wiki](https://github.com/Mochytk/INF236-GRUPO-13/wiki).
+- Sección [Servicios](https://github.com/Mochytk/INF225-Informagicos/wiki/Servicios) de la [Wiki](https://github.com/Mochytk/INF225-Informagicos/wiki).
 - [Métodos de la API de al red de colegios SIP](https://docs.google.com/spreadsheets/d/1EpDN1tzUwHGL3f3PVp9PCgyoJPDbeeiUk6s3VOLamCY/edit?gid=744756109#gid=744756109)
