@@ -10,6 +10,9 @@ Este es el repositorio del grupo *Informágicos* (Grupo 1), cuyos integrantes so
 # Sección INF-225
 ## Contexto
 Durante el transcurso de este semestre vamos a continuar trabajando sobre la base que establecimos en el ramo de INF-236 Análisis y Diseño de Software. El proyecto busca generar una plataforma para que alumnos de colegios adheridos a la SIP puedan desarrollar ensayos tipo PAES para prepararse para la prueba.
+
+Nosotros en Análisis eramos el grupo 13, por suerte, continuamos nuestro proyecto y mantenemos a nuestros integrantes originales.
+
 ## Wiki
 Puede acceder a la Wiki mediante el siguiente [enlace](https://github.com/Mochytk/INF225-Informagicos/wiki)
 
