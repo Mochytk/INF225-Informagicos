@@ -1,3 +1,37 @@
 from django.contrib import admin
+from .models import Ensayo, Pregunta, Opcion, Resultado, Respuesta
 
+class OpcionInline(admin.TabularInline):
+    model = Opcion
+    extra = 2
+
+class PreguntaInline(admin.StackedInline):
+    model = Pregunta
+    extra = 1
+
+@admin.register(Ensayo)
+class EnsayoAdmin(admin.ModelAdmin):
+    list_display = ('titulo', 'materia', 'curso', 'fecha')
+    search_fields = ('titulo', 'materia', 'curso')
+    inlines = [PreguntaInline]
+
+@admin.register(Pregunta)
+class PreguntaAdmin(admin.ModelAdmin):
+    list_display = ('id', 'enunciado', 'tipo', 'ensayo')
+    list_filter = ('tipo',)
+    inlines = [OpcionInline]
+
+@admin.register(Opcion)
+class OpcionAdmin(admin.ModelAdmin):
+    list_display = ('texto', 'pregunta', 'es_correcta')
+    list_filter = ('es_correcta',)
+
+@admin.register(Resultado)
+class ResultadoAdmin(admin.ModelAdmin):
+    list_display = ('ensayo','alumno','puntaje_total','fecha')
+    readonly_fields = ('puntaje_total','fecha')
+
+@admin.register(Respuesta)
+class RespuestaAdmin(admin.ModelAdmin):
+    list_display = ('resultado','pregunta','opcion','correcta')
 # Register your models here.
