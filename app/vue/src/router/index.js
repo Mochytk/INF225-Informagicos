@@ -12,6 +12,8 @@ import Restringido from '../components/Restringido.vue';
 import CreadordeEnsayos from '@/components/CreadordeEnsayos.vue';
 import EditordeEnsayos from '@/components/EditordeEnsayos.vue';
 import Ensayo from '@/components/Ensayo.vue';
+import ListaEnsayos from '@/views/ListaEnsayos.vue';
+import RendirEnsayo from '@/views/RendirEnsayo.vue';
 
 const routes = [
   { path: '/', component: HomePage },
@@ -27,8 +29,22 @@ const routes = [
   { path: '/acceso-restringido', component: Restringido},
   { path: '/docente/creador-ensayos', component: CreadordeEnsayos},
   { path: '/docente/editor-ensayos', component: EditordeEnsayos},
-  { path: '/alumno/ensayo', component: Ensayo},
+  //{ path: '/alumno/ensayo', component: Ensayo},
   { path: '/docente/editor-ensayos/:id', component: EditordeEnsayos, props: true},
+  { path: '/ensayos/:materia', name: 'lista-ensayos', component: ListaEnsayos, props: route => ({ materia: route.params.materia }) },
+  { path: '/alumno/ensayo/:id', name: 'rendir-ensayo', component: RendirEnsayo, props: true },
+  {
+  path: '/ensayos/:materia',
+  name: 'lista-ensayos',
+  component: ListaEnsayos,
+  props: route => ({ materia: route.params.materia }),
+},
+{
+  path: '/alumno/ensayo/:id',
+  name: 'rendir-ensayo',
+  component: RendirEnsayo,
+  props: true,
+},
 ];
 
 const router = createRouter({

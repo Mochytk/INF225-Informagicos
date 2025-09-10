@@ -3,7 +3,8 @@ from .models import Ensayo, Pregunta, Opcion, Resultado, Respuesta
 
 class OpcionInline(admin.TabularInline):
     model = Opcion
-    extra = 2
+    extra = 4
+    min_num = 1
 
 class PreguntaInline(admin.StackedInline):
     model = Pregunta
@@ -23,7 +24,7 @@ class PreguntaAdmin(admin.ModelAdmin):
 
 @admin.register(Opcion)
 class OpcionAdmin(admin.ModelAdmin):
-    list_display = ('texto', 'pregunta', 'es_correcta')
+    list_display = ('id', 'texto', 'pregunta', 'es_correcta')
     list_filter = ('es_correcta',)
 
 @admin.register(Resultado)

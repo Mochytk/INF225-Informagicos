@@ -45,8 +45,7 @@ function logout() {
 }
 
 function seleccionarMateria(nombre) {
-    localStorage.setItem('materiaSeleccionada', nombre);
-    router.push('/alumno/ensayo');
+    router.push({ name: 'lista-ensayos', params: { materia: nombre } });
 }
 
 onMounted(() => {
