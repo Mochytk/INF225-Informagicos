@@ -6,9 +6,11 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 from .models import Ensayo, Pregunta, Opcion, Resultado, Respuesta
 import logging
 import json
+
 logger = logging.getLogger(__name__)
 class ExamViewSet(viewsets.ModelViewSet):
     """
@@ -140,42 +142,55 @@ def submit_ensayo(request, ensayo_id):
 def results_summary(request, ensayo_id):
     ensayo = get_object_or_404(Ensayo, pk=ensayo_id)
 
-    # Permisos básicos: solo docentes (o staff) pueden ver resumen
     user = request.user
     if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
         return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
 
     total_participantes = Resultado.objects.filter(ensayo=ensayo).values('alumno').distinct().count()
 
-    # Agregación por tipo de pregunta
-    tipos = ensayo.preguntas.values_list('tipo', flat=True).distinct()
-    by_type = []
-    for t in tipos:
-        preguntas_tipo = ensayo.preguntas.filter(tipo=t)
-        preguntas_ids = list(preguntas_tipo.values_list('id', flat=True))
-        # respuestas relativas a esas preguntas
-        respuestas_qs = Respuesta.objects.filter(pregunta_id__in=preguntas_ids)
-        respondidas = respuestas_qs.count()  # total de respuestas registradas
-        correctas = respuestas_qs.filter(correcta=True).count()
-        # número de preguntas (cantidad de items de ese tipo en el ensayo)
-        cantidad_preguntas = preguntas_tipo.count()
-        porcentaje_correctas = round((correctas / respondidas * 100), 1) if respondidas > 0 else 0.0
+    # Agregación por tipo de pregunta (como antes)
+    tipos_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
+        .values('pregunta__tipo') \
+        .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
 
+    by_type = []
+    for row in tipos_agg:
+        total = row['respondidas'] or 0
+        correctas = row['correctas'] or 0
+        porcentaje = round((correctas / total * 100), 1) if total > 0 else 0.0
         by_type.append({
-            'tipo': t,
-            'preguntas': cantidad_preguntas,
+            'tipo': row['pregunta__tipo'],
+            'respondidas': total,
             'correctas': correctas,
-            'respondidas': respondidas,
-            'porcentaje_correctas': porcentaje_correctas
+            'porcentaje_correctas': porcentaje
+        })
+
+    # Agregación por pregunta (nuevo)
+    preguntas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
+        .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo') \
+        .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
+
+    by_question = []
+    for row in preguntas_agg:
+        total = row['respondidas'] or 0
+        correctas = row['correctas'] or 0
+        porcentaje = round((correctas / total * 100), 1) if total > 0 else 0.0
+        by_question.append({
+            'pregunta_id': row['pregunta__id'],
+            'texto': row.get('pregunta__enunciado') or '',
+            'tipo': row.get('pregunta__tipo') or '',
+            'respondidas': total,
+            'correctas': correctas,
+            'porcentaje_correctas': porcentaje
         })
 
     return Response({
         'ensayo_id': ensayo.id,
         'titulo': ensayo.titulo,
         'total_participantes': total_participantes,
-        'by_type': by_type
+        'by_type': by_type,
+        'by_question': by_question,
     })
-
 
 # 3) Endpoint: GET /api/ensayos/<ensayo_id>/questions/<pregunta_id>/breakdown/
 @api_view(['GET'])

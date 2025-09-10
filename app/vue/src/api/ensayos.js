@@ -38,3 +38,15 @@ export async function submitEnsayo(ensayoId, respuestas) {
   const resp = await axios.post(url, { respuestas }, { headers: { ...authHeader(), 'Content-Type': 'application/json' } });
   return resp.data;
 }
+
+export async function getResultsSummary(ensayoId) {
+  const url = `${API_BASE}/ensayos/${ensayoId}/results/summary/`;
+  const resp = await axios.get(url, { headers: { ...authHeader() } });
+  return resp.data;
+}
+
+export async function getQuestionBreakdown(ensayoId, preguntaId) {
+  const url = `${API_BASE}/ensayos/${ensayoId}/questions/${preguntaId}/breakdown/`;
+  const resp = await axios.get(url, { headers: { ...authHeader() } });
+  return resp.data;
+}

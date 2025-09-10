@@ -6,7 +6,7 @@
         Bienvenido, {{ nombreUsuario }}
       </span>
       <div class="nav-botones">
-        <button class="nav-btn" @click="mostrarSeccionResultados">Ver resultados</button>
+        <button class="nav-btn" @click="irAListaResultados">Ver resultados</button>
         <button class="nav-btn" @click="mostrarSeccionCrearEnsayo">Crear ensayo</button>
       </div>
 
@@ -73,7 +73,22 @@
 
 
 </template>
+<script setup>
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
+function irAListaResultados() {
+  // ejemplo: comprobación rápida de rol
+  const rol = (localStorage.getItem('rol') || '').toLowerCase();
+  if (rol !== 'docente' && !JSON.parse(localStorage.getItem('is_staff') || 'false')) {
+    alert('Acceso restringido: sólo docentes');
+    router.push('/acceso-restringido');
+    return;
+  }
+  router.push({ name: 'lista-ensayos-docente' });
+}
+
+</script>
 <script>
 export default {
   data() {

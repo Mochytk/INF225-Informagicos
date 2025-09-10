@@ -14,6 +14,8 @@ import EditordeEnsayos from '@/components/EditordeEnsayos.vue';
 import Ensayo from '@/components/Ensayo.vue';
 import ListaEnsayos from '@/views/ListaEnsayos.vue';
 import RendirEnsayo from '@/views/RendirEnsayo.vue';
+import ListaEnsayosDocente from '@/views/ListaEnsayosDocente.vue';
+import EnsayoResultados from '@/views/EnsayoResultados.vue';
 
 const routes = [
   { path: '/', component: HomePage },
@@ -44,6 +46,17 @@ const routes = [
   name: 'rendir-ensayo',
   component: RendirEnsayo,
   props: true,
+},
+{
+  path: '/docente/ensayos',
+  name: 'lista-ensayos-docente',
+  component: ListaEnsayosDocente
+},
+{
+  path: '/docente/ensayo/:id/resultados',
+  name: 'ensayo-resultados',
+  component: EnsayoResultados,
+  props: true
 },
 ];
 
