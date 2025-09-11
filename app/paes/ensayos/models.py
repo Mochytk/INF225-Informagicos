@@ -1,6 +1,11 @@
 from django.db import models
 from usuarios.models import Usuario
-
+class Etiqueta(models.Model):
+    nombre = models.CharField(max_length=80, unique=True)
+    descripcion = models.TextField(blank=True)
+    
+    def __str__(self):
+        return self.nombre
 class Ensayo(models.Model):
     titulo = models.CharField(max_length=200, default="Título") # Nombre del ensayo
     materia = models.CharField(max_length=100, default="Materia") # Ej: 'Matemáticas', 'Lenguaje', 'Ciencias', 'Historia'.
@@ -17,8 +22,9 @@ class Pregunta(models.Model):
     #opciones = models.JSONField(default=list)  # Ej: ['Opción A', 'Opción B', ...]
     dificultad = models.CharField(max_length=50, default="Sin definir")  # Ej: 'Fácil', 'Medio', 'Difícil'
     correct_answer = models.CharField(max_length=1, default="A")  # Ej: 'A', 'B', etc.
-    tipo = models.CharField(max_length=50, choices=[("alternativa_simple", "Alternativa Simple"), ("desarrollo", "Desarrollo")])
-    
+    tipo = models.CharField(max_length=50, choices=[("alternativa_simple", "Alternativa Simple")])
+    etiquetas = models.ManyToManyField(Etiqueta, blank=True, related_name='preguntas')
+
     def __str__(self):
         return f"{self.enunciado[:200]}..."
 class Intento(models.Model):
@@ -55,3 +61,4 @@ class Respuesta(models.Model):
 
     def __str__(self):
         return f"Resp. {self.pregunta.id} por {self.resultado.alumno.username}"
+

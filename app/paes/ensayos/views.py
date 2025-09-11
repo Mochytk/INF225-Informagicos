@@ -183,6 +183,26 @@ def results_summary(request, ensayo_id):
             'correctas': correctas,
             'porcentaje_correctas': porcentaje
         })
+    
+    etiquetas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
+        .values('pregunta__etiquetas__id', 'pregunta__etiquetas__nombre') \
+        .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True))) \
+        .order_by('-respondidas')
+
+    by_tag = []
+    for row in etiquetas_agg:
+        tag_id = row.get('pregunta__etiquetas__id')
+        tag_name = row.get('pregunta__etiquetas__nombre') or 'Sin etiqueta'
+        total = row['respondidas'] or 0
+        correctas = row['correctas'] or 0
+        pct = round((correctas / total * 100), 1) if total > 0 else 0.0
+        by_tag.append({
+            'tag_id': tag_id,
+            'tag': tag_name,
+            'respondidas': total,
+            'correctas': correctas,
+            'porcentaje_correctas': porcentaje
+        })
 
     return Response({
         'ensayo_id': ensayo.id,
@@ -190,6 +210,7 @@ def results_summary(request, ensayo_id):
         'total_participantes': total_participantes,
         'by_type': by_type,
         'by_question': by_question,
+        'by_tag':by_tag
     })
 
 # 3) Endpoint: GET /api/ensayos/<ensayo_id>/questions/<pregunta_id>/breakdown/
