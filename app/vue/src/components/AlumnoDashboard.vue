@@ -8,7 +8,7 @@
                 <button>Realizar Ensayo</button>
             </RouterLink>
             <RouterLink to="/alumno/resultados">
-                <button>Ver Resultados</button>
+                <button>Ver Resultados(WIP)</button>
             </RouterLink>
             <button @click="logout">Cerrar Sesión</button>
         </div>
@@ -32,7 +32,6 @@ export default {
         }
     },
     mounted() {
-      // Protección: si no está logeado, redirige
     if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'alumno') {
         console.warn('Acceso restringido: no tienes permiso para ver esta página.');
         alert('Acceso restringido: no tienes permiso para ver esta página.');

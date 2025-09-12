@@ -7,33 +7,32 @@ class Etiqueta(models.Model):
     def __str__(self):
         return self.nombre
 class Ensayo(models.Model):
-    titulo = models.CharField(max_length=200, default="Título") # Nombre del ensayo
-    materia = models.CharField(max_length=100, default="Materia") # Ej: 'Matemáticas', 'Lenguaje', 'Ciencias', 'Historia'.
+    titulo = models.CharField(max_length=200, default="Título")
+    materia = models.CharField(max_length=100, default="Materia")
     curso = models.CharField(max_length=50, default="Curso")
     fecha = models.DateTimeField(auto_now_add=True)
-    creador = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True, default=None) # Docente que creó el ensayo
-
+    creador = models.ForeignKey(Usuario, on_delete=models.CASCADE, null=True, blank=True, default=None)
     def __str__(self):
         return self.titulo
 class Pregunta(models.Model):
-    ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='preguntas') # Clave foránea al ensayo correspondiente
-    enunciado = models.TextField() # Enunciado de la pregunta
-    enunciado_img = models.ImageField(upload_to='preguntas/', null=True, blank=True)  # imagen que acompaña al enunciado (opcional)
-    #opciones = models.JSONField(default=list)  # Ej: ['Opción A', 'Opción B', ...]
-    dificultad = models.CharField(max_length=50, default="Sin definir")  # Ej: 'Fácil', 'Medio', 'Difícil'
-    correct_answer = models.CharField(max_length=1, default="A")  # Ej: 'A', 'B', etc.
+    ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE, related_name='preguntas')
+    enunciado = models.TextField()
+    #enunciado_img = models.ImageField(upload_to='preguntas/', null=True, blank=True)
+    #opciones = models.JSONField(default=list)  
+    dificultad = models.CharField(max_length=50, default="Sin definir")  
+    correct_answer = models.CharField(max_length=1, default="A")  
     tipo = models.CharField(max_length=50, choices=[("alternativa_simple", "Alternativa Simple")])
     etiquetas = models.ManyToManyField(Etiqueta, blank=True, related_name='preguntas')
 
     def __str__(self):
         return f"{self.enunciado[:200]}..."
 class Intento(models.Model):
-    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE) # Estudiante que realiza el intento
-    ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE) # Ensayo que se está intentando
-    respuestas = models.JSONField(default=list)  # Respuestas del estudiante en formato lista
-    puntaje = models.IntegerField(default="100") # Puntaje obtenido en el intento
-    fecha = models.DateTimeField(auto_now_add=True) # Fecha y hora del intento
-    duracion = models.DurationField(default="0") # Duración del intento (segundos)
+    estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE) 
+    ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE) 
+    respuestas = models.JSONField(default=list)  
+    puntaje = models.IntegerField(default="100") 
+    fecha = models.DateTimeField(auto_now_add=True) 
+    duracion = models.DurationField(default="0") 
 
 class Opcion(models.Model):
     pregunta = models.ForeignKey(Pregunta, on_delete=models.CASCADE, related_name="opciones")

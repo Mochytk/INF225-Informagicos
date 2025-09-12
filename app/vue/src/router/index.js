@@ -19,7 +19,6 @@ import EnsayoResultados from '@/views/EnsayoResultados.vue';
 
 const routes = [
   { path: '/', component: HomePage },
-  //{ path: '/:rol', component: Dashboard },
   { path: '/como-funciona', component: ComoFunciona},
   { path: '/about', component: About},
   { path: '/docente/historial', component: Historial},
@@ -31,7 +30,6 @@ const routes = [
   { path: '/acceso-restringido', component: Restringido},
   { path: '/docente/creador-ensayos', component: CreadordeEnsayos},
   { path: '/docente/editor-ensayos', component: EditordeEnsayos},
-  //{ path: '/alumno/ensayo', component: Ensayo},
   { path: '/docente/editor-ensayos/:id', component: EditordeEnsayos, props: true},
   { path: '/ensayos/:materia', name: 'lista-ensayos', component: ListaEnsayos, props: route => ({ materia: route.params.materia }) },
   { path: '/alumno/ensayo/:id', name: 'rendir-ensayo', component: RendirEnsayo, props: true },

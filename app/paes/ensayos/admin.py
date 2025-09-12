@@ -43,5 +43,4 @@ class ResultadoAdmin(admin.ModelAdmin):
 @admin.register(Respuesta)
 class RespuestaAdmin(admin.ModelAdmin):
     list_display = ('resultado','pregunta','opcion','correcta')
-# Register your models here.
 

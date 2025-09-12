@@ -3,29 +3,31 @@
     <h2>Resultados — {{ resumen.titulo || ('Ensayo ' + ensayoId) }}</h2>
     <p v-if="resumen.total_participantes !== undefined">Participantes: {{ resumen.total_participantes }}</p>
 
-    <div class="controls">
-      <label>Tipo de gráfico:
-        <select v-model="chartType">
-          <option value="bar">Barras</option>
-          <option value="pie">Torta</option>
-        </select>
-      </label>
-    </div>
-
     <div v-if="loadingSummary" class="loading">Cargando resumen...</div>
-
-    <div class="canvas-wrap">
-      <canvas v-if="!loadingSummary" ref="summaryCanvas" class="summary-canvas"></canvas>
-    </div>
 
     <h3>Por etiquetas</h3>
     <div v-if="!resumen.by_tag || resumen.by_tag.length === 0" class="no-data">No hay datos por etiquetas.</div>
-    <div class="canvas-wrap">
-      <canvas v-if="resumen.by_tag && resumen.by_tag.length > 0" ref="tagCanvas" class="tag-canvas"></canvas>
+
+    <div v-if="resumen.by_tag && resumen.by_tag.length > 0" class="tags-grid">
+      <div v-for="(t, idx) in resumen.by_tag" :key="t.tag || idx" class="tag-card">
+        <div class="tag-header">
+          <strong>{{ t.tag || 'Sin etiqueta' }}</strong>
+          <div class="tag-meta">Respondidas: {{ t.respondidas ?? 0 }}</div>
+        </div>
+
+        <div class="tag-canvas-wrap">
+          <canvas :ref="el => setTagCanvas(el, idx)" class="tag-chart-canvas"></canvas>
+        </div>
+
+        <div class="tag-footer">
+          <div>Correctas: {{ (t.porcentaje_correctas ?? 0) }}%</div>
+          <div>Incorrectas: {{ (100 - (t.porcentaje_correctas ?? 0)).toFixed(1) }}%</div>
+        </div>
+      </div>
     </div>
 
     <h3>Preguntas</h3>
-    <div v-if="preguntasList.length === 0" class="no-data">No hay datos por tipo.</div>
+    <div v-if="preguntasList.length === 0" class="no-data">No hay datos por pregunta.</div>
 
     <ul class="preg-list">
       <li v-for="(p, idx) in preguntasList" :key="p.id" class="preg-item">
@@ -56,7 +58,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { getResultsSummary, getQuestionBreakdown, fetchEnsayo } from '@/api/ensayos';
 import { Chart, registerables } from 'chart.js';
@@ -71,44 +73,40 @@ const preguntasList = ref([]);
 const loadingSummary = ref(true);
 const loadingBreakdown = ref(false);
 
-const summaryCanvas = ref(null);
 const breakCanvas = ref(null);
-const tagCanvas = ref(null);
+const tagCanvases = ref([]);
+const tagCharts = ref([]);
 
-let summaryChart = null;
 let breakChart = null;
-let tagChart = null;
 
-const chartType = ref('bar');
 const breakdownData = ref(null);
 
-// parámetros de seguridad
-const MAX_CANVAS_DIM = 32767; // límite obligatorio
-const maxCanvasWidthPx = 1100; // ancho máximo visual en px para el canvas (ajustable)
+const MAX_CANVAS_DIM = 32767;
+const maxCanvasWidthPx = 900;
 
-// ---- helpers robustos ----
+function setTagCanvas(el, idx) {
+  tagCanvases.value[idx] = el;
+}
+
 function safeDestroyChartOnCanvas(canvas) {
   if (!canvas) return;
   try {
     const existing = Chart.getChart(canvas);
     if (existing) existing.destroy();
   } catch (e) {
-    // si destroy falla debido a canvas en estado de error, intentamos reemplazar el canvas
     console.warn('safeDestroyChartOnCanvas: error destroying chart', e);
   }
 }
 
-function replaceCanvasNodeAndUpdateRef(canvasRef) {
-  // canvasRef es la ref reactive (summaryCanvas, tagCanvas o breakCanvas)
-  const old = canvasRef.value;
-  if (!old || !old.parentNode) return canvasRef.value;
+function replaceCanvasNodeAndUpdateRef(canvasRefArray, idx) {
+  const old = canvasRefArray.value[idx];
+  if (!old || !old.parentNode) return null;
   const parent = old.parentNode;
-  const newCanvas = old.cloneNode(false); // no children
-  // copiar clases/atributos visuales
+  const newCanvas = old.cloneNode(false);
   newCanvas.className = old.className;
   newCanvas.style.cssText = old.style.cssText;
   parent.replaceChild(newCanvas, old);
-  canvasRef.value = newCanvas;
+  canvasRefArray.value[idx] = newCanvas;
   return newCanvas;
 }
 
@@ -116,50 +114,34 @@ function computeSafeDevicePixelRatioForCanvas(canvas) {
   const cw = Math.max(1, canvas.clientWidth || 1);
   const windowDpr = window.devicePixelRatio || 1;
   const maxDprAllowed = Math.floor(MAX_CANVAS_DIM / cw) || 1;
-  // limitamos por seguridad entre 1 y 2 (ajustable)
   return Math.max(1, Math.min(windowDpr, maxDprAllowed, 2));
 }
 
-function ensureCanvasHealthy(canvasRef) {
-  // Garantiza que el canvas asociado a la ref esté en estado utilizable.
-  let canvas = canvasRef.value;
+function ensureCanvasHealthyForIndex(canvasRefArray, idx) {
+  let canvas = canvasRefArray.value[idx];
   if (!canvas) return null;
-
-  // Si clientWidth = 0 (no visible) no intentamos forzar nada
   if (canvas.clientWidth === 0) return canvas;
-
-  // forzamos un ancho visual máximo para que clientWidth no crezca infinito
   try {
     const boundedWidth = Math.min(canvas.clientWidth, maxCanvasWidthPx);
     canvas.style.width = boundedWidth + 'px';
-    // alto fijo (si quieres responsive vertical, ajusta aquí)
-    canvas.style.height = '320px';
-  } catch (e) {
-    // ignore
-  }
-
-  // intentar destruir chart existente de forma segura
+    canvas.style.height = '220px';
+  } catch (e) {}
   try {
     const existing = Chart.getChart(canvas);
     if (existing) {
-      try {
-        existing.destroy();
-      } catch (errDestroy) {
-        // si destroy falla porque canvas está en error state -> reemplazar canvas
+      try { existing.destroy(); }
+      catch (errDestroy) {
         console.warn('destroy failed, replacing canvas node', errDestroy);
-        canvas = replaceCanvasNodeAndUpdateRef(canvasRef);
+        canvas = replaceCanvasNodeAndUpdateRef(canvasRefArray, idx);
       }
     }
   } catch (ex) {
-    // si Chart.getChart o destroy lanza excepción -> reemplazamos canvas
-    console.warn('safe destroy/getChart failed, replacing canvas', ex);
-    canvas = replaceCanvasNodeAndUpdateRef(canvasRef);
+    console.warn('safe get/destroy failed, replacing canvas', ex);
+    canvas = replaceCanvasNodeAndUpdateRef(canvasRefArray, idx);
   }
-
-  return canvasRef.value;
+  return canvasRefArray.value[idx];
 }
 
-// ---- lifecycle ----
 onMounted(async () => {
   const rol = (localStorage.getItem('rol') || '').toLowerCase();
   if (rol !== 'docente' && !JSON.parse(localStorage.getItem('is_staff') || 'false')) {
@@ -170,17 +152,10 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  try { if (summaryChart) summaryChart.destroy(); } catch(_) {}
   try { if (breakChart) breakChart.destroy(); } catch(_) {}
-  try { if (tagChart) tagChart.destroy(); } catch(_) {}
+  (tagCharts.value || []).forEach(c => { try { if (c) c.destroy(); } catch(_) {} });
 });
 
-watch(chartType, () => {
-  drawSummaryChart();
-  drawTagChart();
-});
-
-// ---- main logic ----
 async function loadSummary() {
   loadingSummary.value = true;
   try {
@@ -215,7 +190,6 @@ async function loadSummary() {
               return p;
             }
           });
-
           preguntasList.value = await Promise.all(promesas);
         } else {
           preguntasList.value = [];
@@ -226,9 +200,18 @@ async function loadSummary() {
       }
     }
 
-    // dibujar gráficos
-    drawSummaryChart();
-    drawTagChart();
+    if (Array.isArray(resumen.value.by_tag)) {
+      tagCanvases.value = new Array(resumen.value.by_tag.length);
+      tagCharts.value = new Array(resumen.value.by_tag.length);
+    } else {
+      tagCanvases.value = [];
+      tagCharts.value = [];
+    }
+
+    setTimeout(() => {
+      drawAllTagCharts();
+    }, 50);
+
   } catch (err) {
     console.error('Error cargando resumen', err);
     preguntasList.value = [];
@@ -237,99 +220,52 @@ async function loadSummary() {
   }
 }
 
-function drawSummaryChart() {
-  // obtenemos un canvas sano y acotado
-  let canvas = ensureCanvasHealthy(summaryCanvas);
-  if (!canvas) return;
-  // si invisible o sin tamaño evadir
-  if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
-  if (!resumen.value?.by_type) return;
-
-  const labels = resumen.value.by_type.map(b => b.tipo || 'sin tipo');
-  const values = resumen.value.by_type.map(b => {
-    const v = Number(b.porcentaje_correctas ?? 0);
-    return isFinite(v) ? Math.max(0, Math.min(100, v)) : 0;
+function drawAllTagCharts() {
+  if (!Array.isArray(resumen.value?.by_tag)) return;
+  resumen.value.by_tag.forEach((t, idx) => {
+    drawSingleTagChart(t, idx);
   });
+}
 
-  // después de asegurar canvas, volvemos a intentar destruir cualquier chart atado
-  safeDestroyChartOnCanvas(canvas);
+function drawSingleTagChart(tagObj, idx) {
+  const pct = Number(tagObj.porcentaje_correctas ?? 0);
+  const correct = isFinite(pct) ? Math.max(0, Math.min(100, pct)) : 0;
+  const incorrect = Math.max(0, 100 - correct);
+
+  let canvas = ensureCanvasHealthyForIndex(tagCanvases, idx);
+  if (!canvas) return;
+  if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
+
+  try { if (tagCharts.value[idx]) { tagCharts.value[idx].destroy(); tagCharts.value[idx] = null; } } catch (e) { console.warn('error destruyendo tagCharts[idx]', e); }
 
   const devicePixelRatio = computeSafeDevicePixelRatioForCanvas(canvas);
 
-  const config = {
-    type: chartType.value === 'bar' ? 'bar' : 'pie',
-    data: {
-      labels,
-      datasets: [{
-        label: '% respuestas correctas',
-        data: values,
-        backgroundColor: labels.map((_, i) => `rgba(${(50 + (i*40)) % 255}, ${(100 + (i*30)) % 255}, ${(150 + (i*20)) % 255}, 0.7)`),
-        borderColor: 'rgba(255,255,255,0.08)',
-        borderWidth: 1
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      devicePixelRatio,
-      plugins: { legend: { display: chartType.value === 'pie' } },
-      scales: chartType.value === 'bar' ? { y: { beginAtZero: true, max: 100 } } : {}
-    }
+  const data = {
+    labels: ['Correctas', 'Incorrectas'],
+    datasets: [{
+      data: [correct, incorrect],
+      backgroundColor: ['rgba(46,204,113,0.85)', 'rgba(231,76,60,0.85)'],
+      borderColor: ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.06)'],
+      borderWidth: 1
+    }]
   };
 
   try {
     const ctx = canvas.getContext && canvas.getContext('2d');
-    if (!ctx) throw new Error('No canvas context available');
-    summaryChart = new Chart(ctx, config);
-  } catch (err) {
-    console.error('Error creando summaryChart', err);
-  }
-}
-
-function drawTagChart() {
-  let canvas = ensureCanvasHealthy(tagCanvas);
-  if (!canvas) return;
-  if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
-
-  const data = resumen.value?.by_tag;
-  if (!Array.isArray(data) || data.length === 0) {
-    safeDestroyChartOnCanvas(canvas);
-    tagChart = null;
-    return;
-  }
-
-  const labels = data.map(t => t.tag || 'Sin etiqueta');
-  const rawValues = data.map(t => Number(t.porcentaje_correctas ?? 0));
-  const values = rawValues.map(v => (isFinite(v) ? Math.max(0, Math.min(100, v)) : 0));
-
-  safeDestroyChartOnCanvas(canvas);
-  const devicePixelRatio = computeSafeDevicePixelRatioForCanvas(canvas);
-
-  try {
-    const ctx = canvas.getContext && canvas.getContext('2d');
-    if (!ctx) throw new Error('No canvas context available for tagChart');
-
-    tagChart = new Chart(ctx, {
-      type: chartType.value === 'pie' ? 'pie' : 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: '% correctas por etiqueta',
-          data: values,
-          backgroundColor: labels.map((_, i) => `rgba(${(80 + i*30)%255}, ${(60 + i*40)%255}, ${(140 + i*10)%255}, 0.8)`),
-          borderColor: 'rgba(0,0,0,0.06)',
-          borderWidth: 1
-        }]
-      },
+    if (!ctx) throw new Error('No canvas context for tag');
+    tagCharts.value[idx] = new Chart(ctx, {
+      type: 'doughnut',
+      data,
       options: {
         responsive: true,
         maintainAspectRatio: false,
         devicePixelRatio,
-        scales: chartType.value === 'bar' ? { y: { beginAtZero: true, max: 100 } } : {}
+        plugins: { legend: { position: 'bottom' } },
+        cutout: '50%'
       }
     });
   } catch (err) {
-    console.error('Error creando tagChart', err);
+    console.error('Error creando tagChart idx', idx, err);
   }
 }
 
@@ -349,18 +285,14 @@ async function fetchAndShowBreakdown(preguntaId) {
 }
 
 function drawBreakdownChart() {
-  let canvas = ensureCanvasHealthy(breakCanvas);
-  if (!canvas) return;
+  const canvas = breakCanvas.value;
+  if (!canvas || !breakdownData.value) return;
   if (canvas.clientWidth === 0 || canvas.clientHeight === 0) return;
-  if (!breakdownData.value) return;
 
-  safeDestroyChartOnCanvas(canvas);
+  try { safeDestroyChartOnCanvas(canvas); } catch(_) {}
 
   const labels = (breakdownData.value.opciones || []).map(o => o.texto || ('Opción ' + o.id));
-  const values = (breakdownData.value.opciones || []).map(o => {
-    const n = Number(o.porcentaje ?? 0);
-    return isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
-  });
+  const values = (breakdownData.value.opciones || []).map(o => { const n = Number(o.porcentaje ?? 0); return isFinite(n) ? Math.max(0, Math.min(100, n)) : 0; });
 
   const devicePixelRatio = computeSafeDevicePixelRatioForCanvas(canvas);
 
@@ -370,16 +302,8 @@ function drawBreakdownChart() {
 
     breakChart = new Chart(ctx, {
       type: 'pie',
-      data: {
-        labels,
-        datasets: [{ data: values, backgroundColor: labels.map((_, i) => `rgba(${(80 + i*30)%255}, ${(60 + i*40)%255}, ${(140 + i*10)%255}, 0.8)`) }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        devicePixelRatio,
-        plugins: { legend: { position: 'bottom' } }
-      }
+      data: { labels, datasets: [{ data: values, backgroundColor: labels.map((_, i) => `rgba(${(80 + i*30)%255}, ${(60 + i*40)%255}, ${(140 + i*10)%255}, 0.8)` ) }] },
+      options: { responsive: true, maintainAspectRatio: false, devicePixelRatio, plugins: { legend: { position: 'bottom' } } }
     });
   } catch (err) {
     console.error('Error creando breakChart', err);
@@ -409,17 +333,15 @@ function trim(s) {
   box-sizing: border-box;
 }
 
-.controls { margin: 12px 0; }
-
 .canvas-wrap {
   display: flex;
   justify-content: center;
   width: 100%;
 }
 
-.summary-canvas, .break-canvas, .tag-canvas {
+.break-canvas {
   width: 100%;
-  max-width: 1100px; /* importante: evita que canvas crezca demasiado */
+  max-width: 1100px;
   height: 320px;
   display: block;
   margin: 12px 0;
@@ -427,6 +349,41 @@ function trim(s) {
   border-radius: 8px;
   box-sizing: border-box;
 }
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  width: 100%;
+  margin: 12px 0;
+}
+
+.tag-card {
+  background: rgba(255,255,255,0.02);
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tag-header {
+  width: 100%;
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+  margin-bottom: 8px;
+}
+
+.tag-canvas-wrap { width: 100%; display:flex; justify-content:center; }
+.tag-chart-canvas {
+  width: 100%;
+  max-width: 260px;
+  height: 160px;
+  background: transparent;
+}
+
+.tag-footer { margin-top: 8px; display:flex; gap:12px; justify-content:space-between; width:100%; font-size: 0.95em; }
 
 .loading { opacity: 0.85; margin: 8px 0; }
 .preg-list { list-style:none; padding:0; margin: 12px 0 0 0; }

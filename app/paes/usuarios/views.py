@@ -26,16 +26,16 @@ class LoginAPIView(APIView):
 
         try:
             usuario = Usuario.objects.get(email=email)
-            print("✅ Usuario encontrado:", usuario.username)
+            print("Usuario encontrado:", usuario.username)
         except Usuario.DoesNotExist:
-            print("❌ Usuario no encontrado con email:", email)
+            print("Usuario no encontrado con email:", email)
             return Response({'error': 'email o contraseña inválidos'}, status=status.HTTP_401_UNAUTHORIZED)
 
         if usuario.check_password(contraseña):
-            print("✅ Contraseña correcta")
+            print("Contraseña correcta")
 
             token, created = Token.objects.get_or_create(user=usuario)
-            print("✅ Token:", token.key)
+            print("Token:", token.key)
 
             return Response({
                 'token': token.key,
@@ -43,7 +43,7 @@ class LoginAPIView(APIView):
                 'username': usuario.username,
             }, status=status.HTTP_200_OK)
         else:
-            print("❌ Contraseña incorrecta")
+            print("Contraseña incorrecta")
             return Response({'error': 'email o contraseña inválidos'}, status=status.HTTP_401_UNAUTHORIZED)
 
 

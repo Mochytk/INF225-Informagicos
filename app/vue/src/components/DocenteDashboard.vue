@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!--Barra suprior-->
     <div class="barra-superior">
       <span class="bienvenida">
         Bienvenido, {{ nombreUsuario }}
@@ -14,49 +13,6 @@
     </div>
   </div>
 <div v-if="mostrarResultados" class="resultados-contenedor">
-  <!-- Globo de búsqueda -->
-  <div class="globo-busqueda">
-    <label for="curso">Curso:</label>
-    <select id="curso" class="selector">
-      <option>2do medio A</option>
-      <option>2do medio B</option>
-      <option>3ro medio</option>
-      <option>4to medio</option>
-    </select>
-
-    <label for="prueba">N° prueba:</label>
-    <select id="prueba" class="selector">
-      <option>Comprensión lectora Nº 7</option>
-      <option>Matemática Diagnóstico</option>
-    </select>
-
-    <button class="boton-buscar">Buscar</button>
-  </div>
-
-  <!-- Tabla y promedio debajo -->
-  <div class="tabla-promedio-wrapper">
-    <table class="tabla-resultados">
-      <thead>
-        <tr>
-          <th>Nombre</th>
-          <th>Apellido</th>
-          <th>Puntaje</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(r, index) in resultados" :key="index">
-          <td>{{ r.nombre }}</td>
-          <td>{{ r.apellido }}</td>
-          <td>{{ r.puntaje }}</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <div class="promedio-box">
-      <label for="promedio">Promedio</label>
-      <input id="promedio" type="text" :value="promedio" readonly />
-    </div>
-  </div>
 </div>
 <div v-else class="creador-ensayos">
   <h1>Crear ensayo</h1>
@@ -78,7 +34,6 @@ import { useRouter } from 'vue-router';
 const router = useRouter();
 
 function irAListaResultados() {
-  // ejemplo: comprobación rápida de rol
   const rol = (localStorage.getItem('rol') || '').toLowerCase();
   if (rol !== 'docente' && !JSON.parse(localStorage.getItem('is_staff') || 'false')) {
     alert('Acceso restringido: sólo docentes');
@@ -125,7 +80,6 @@ export default {
 },
   methods: {
     crearEnsayo() {
-      // Aquí irá navegación o funcionalidad real
       alert("Funcionalidad para crear ensayo próximamente.");
     },
     mostrarSeccionResultados(){
@@ -143,7 +97,6 @@ export default {
     }
   },
   mounted() {
-    // Protección: si no está logeado, redirige
     if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'docente') {
       console.warn('Acceso restringido: no tienes permiso para ver esta página.');
       alert('Acceso restringido: no tienes permiso para ver esta página.');
@@ -305,7 +258,7 @@ export default {
 }
 
 .tabla-resultados th {
-  background-color: #b8e994; /* verde pastel */
+  background-color: #b8e994;
 }
 
 .promedio-box {

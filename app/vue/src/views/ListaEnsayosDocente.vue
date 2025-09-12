@@ -28,7 +28,6 @@ const ensayos = ref([]);
 const loading = ref(false);
 
 onMounted(async () => {
-  // protección básica por rol
   const rol = (localStorage.getItem('rol') || '').toLowerCase();
   if (rol !== 'docente' && !JSON.parse(localStorage.getItem('is_staff') || 'false')) {
     router.push('/acceso-restringido');

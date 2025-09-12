@@ -49,7 +49,6 @@ function seleccionarMateria(nombre) {
 }
 
 onMounted(() => {
-    // Protección: si no está logeado, redirige
     if (!localStorage.getItem('token')) {
         router.push('/acceso-restringido');
     }
@@ -68,14 +67,14 @@ onMounted(() => {
   
   .titulo {
     font-size: 2.5em;
-    margin-bottom: 40px; /*margen entre el 'escoge una materia' y lo botones */
+    margin-bottom: 40px;
   }
   
   .materias-grid {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
-    gap: 30px; /*espacio entre los botones*/
+    gap: 30px;
   }
   
   .materia {
@@ -92,7 +91,7 @@ onMounted(() => {
     transform: scale(1.05);
   }
   
-  .materia-img { /*pa las imagenes */
+  .materia-img {
     width: 100%;
     height: 100px;
     object-fit: contain;

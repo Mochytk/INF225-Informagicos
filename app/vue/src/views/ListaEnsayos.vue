@@ -35,7 +35,6 @@ onMounted(async () => {
   loading.value = true;
   try {
     const data = await fetchAllEnsayos();
-    // si la respuesta es un array o un objeto paginado
     ensayos.value = Array.isArray(data) ? data : data.results || [];
   } catch (err) {
     console.error('Error al obtener ensayos', err);

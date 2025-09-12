@@ -51,26 +51,23 @@ const id = route.params.id;
 
 const ensayo = ref({ preguntas: [] });
 const loading = ref(true);
-const answers = ref({}); // map preguntaId -> opcionId | texto
+const answers = ref({}); 
 const resultado = ref(null);
 
 onMounted(async () => {
   const token = localStorage.getItem('token');
   if (!token) {
-    router.push('/'); // o /acceso-restringido
+    router.push('/');
     return;
   }
   try {
     const data = await fetchEnsayo(id);
     ensayo.value = data;
-    // inicializar answers por pregunta
     ensayo.value.preguntas.forEach(p => {
-      // si es alternativa, default null; si desarrollo, empty string
       answers.value[p.id] = isAlternativa(p.tipo) ? null : '';
     });
   } catch (err) {
     console.error('Error cargando ensayo', err);
-    // redirigir o mostrar mensaje
   } finally {
     loading.value = false;
   }
@@ -92,14 +89,11 @@ function loopIndex(preg) {
 }
 
 async function enviar() {
-  // construir payload
   const payload = { respuestas: [] };
   for (const p of ensayo.value.preguntas) {
     const val = answers.value[p.id];
     if (isAlternativa(p.tipo)) {
       if (val === null || val === undefined) {
-        // opcional: puedes forzar que respondan todas
-        // return alert(`Debes responder la pregunta ${p.id}`);
       }
       payload.respuestas.push({ pregunta_id: p.id, opcion_id: val });
     } else {
@@ -110,7 +104,6 @@ async function enviar() {
   try {
     const resp = await submitEnsayo(ensayo.value.id, payload.respuestas);
     resultado.value = { puntaje: resp.puntaje, fecha: resp.fecha };
-    // opcional: guardar localmente o redirigir al listado de resultados
   } catch (err) {
     console.error('Error al enviar ensayo', err);
     alert(err.response?.data?.error || 'Error al enviar ensayo');
