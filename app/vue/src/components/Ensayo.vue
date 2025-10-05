@@ -69,7 +69,7 @@ function finalizarEnsayo() {
     }
   });
 
-  puntaje.value = Math.floor((correctas / preguntas.value.length) * 1000);
+  puntaje.value = Math.floor(((correctas / preguntas.value.length) * 900) + 100);
 }
 
 function iniciarTemporizador() {

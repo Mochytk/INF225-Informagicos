@@ -10,6 +10,9 @@ COPY . .
 # Instalar dependencias
 RUN npm install
 
+# Asegurar permisos (esto puede que solo sea necesario en Linux. Si da error, comenta la línea de abajo)
+RUN chmod +x node_modules/.bin/vite
+
 # Compilar el frontend para producción
 RUN npm run build
 

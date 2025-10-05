@@ -2,6 +2,9 @@
   <div class="rendir-ensayo" v-if="!loading">
     <h2>{{ ensayo.titulo }}</h2>
     <p class="meta">{{ ensayo.materia }} · {{ ensayo.curso }}</p>
+    <div :class="temporizadorClase">
+      <p id="t"></p>
+    </div>
 
     <form @submit.prevent="enviar">
       <div v-for="preg in ensayo.preguntas" :key="preg.id" class="pregunta-card">
@@ -12,9 +15,9 @@
           <div v-for="op in preg.opciones" :key="op.id" class="opcion">
             <label>
               <input type="radio"
-                     :name="'preg-' + preg.id"
-                     :value="op.id"
-                     v-model="answers[preg.id]" />
+                    :name="'preg-' + preg.id"
+                    :value="op.id"
+                    v-model="answers[preg.id]" />
               {{ op.texto }}
             </label>
           </div>
@@ -54,7 +57,43 @@ const loading = ref(true);
 const answers = ref({}); 
 const resultado = ref(null);
 
+const temporizadorClase = ref('temporizador');
+
+function iniciarTemporizador() {
+  let tiempoRestante = 2400; // tiempo en segundos (por defecto: 40 minutos)
+  const temporizador = document.getElementById('t');
+
+  const intervalo = setInterval(() => {
+    if (tiempoRestante <= 0) {
+      clearInterval(intervalo);
+      finalizarEnsayo();
+      return;
+    }
+
+    if (tiempoRestante <= 300) {
+      if (tiempoRestante <= 60) {
+        temporizadorClase.value = 'temporizador alerta-tiempo unminuto';
+      } else {
+        temporizadorClase.value = 'temporizador alerta-tiempo';
+      }
+    }
+    else {
+      temporizadorClase.value = 'temporizador';
+    }
+
+    if (tiempoRestante === 60) {
+      alert('¡Queda un minuto! Por favor, finaliza el ensayo.');
+    }
+
+    const minutos = Math.floor(tiempoRestante / 60);
+    const segundos = tiempoRestante % 60;
+    temporizador.textContent = `Tiempo restante: ${minutos} min ${segundos} seg`;
+    tiempoRestante--;
+  }, 1000);
+}
+
 onMounted(async () => {
+  iniciarTemporizador();
   const token = localStorage.getItem('token');
   if (!token) {
     router.push('/');
@@ -109,6 +148,11 @@ async function enviar() {
     alert(err.response?.data?.error || 'Error al enviar ensayo');
   }
 }
+
+function finalizarEnsayo() {
+  alert('¡El tiempo ha terminado! Tu ensayo será enviado automáticamente.');
+  enviar();
+}
 </script>
 
 <style scoped>
@@ -116,7 +160,7 @@ async function enviar() {
 .pregunta-card { background: rgba(255,255,255,0.04); padding:16px; margin-bottom:14px; border-radius:8px; }
 .enunciado { margin-bottom: 8px; }
 .opcion { margin: 6px 0; }
-textarea { width: 100%; border-radius:6px; padding:8px; background: rgba(255,255,255,0.03); color: white; border:1px solid rgba(255,255,255,0.06); }
+textarea { width: 100%; border-radius:6px; padding:8px; background: rgba(255,255,255,0.03); color: white; border:1px solid rgba(255,255,255,0.06); font-family: 'Segoe UI', sans-serif;}
 .acciones { margin-top: 20px; }
 button { background:#145a32; color:white; padding:8px 16px; border-radius:8px; border:none; cursor:pointer; }
 .resultado-box { margin-top:20px; padding:12px; background: rgba(0,0,0,0.3); border-radius:8px; }
