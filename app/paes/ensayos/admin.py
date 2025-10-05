@@ -24,11 +24,15 @@ class EtiquetaAdmin(admin.ModelAdmin):
 
 @admin.register(Pregunta)
 class PreguntaAdmin(admin.ModelAdmin):
-    list_display = ('id', 'enunciado', 'tipo', 'ensayo')
+    list_display = ('id', 'enunciado', 'tipo', 'ensayo', 'explicacion_texto', 'explicacion_url', 'resumen_enunciado')
     list_filter = ('tipo',)
     search_fields = ('enunciado',)
     filter_horizontal = ('etiquetas',)
     inlines = [OpcionInline]
+
+    def resumen_enunciado(self, obj):
+        return (obj.enunciado[:60] + '...') if len(obj.enunciado) > 60 else obj.enunciado
+    resumen_enunciado.short_description = 'Enunciado'
 
 @admin.register(Opcion)
 class OpcionAdmin(admin.ModelAdmin):

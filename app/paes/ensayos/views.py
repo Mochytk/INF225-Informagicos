@@ -166,7 +166,7 @@ def results_summary(request, ensayo_id):
 
 
     preguntas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
-        .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo') \
+        .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo', 'pregunta_explicacion_texto', 'pregunta_explicacion_url') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
 
     by_question = []
@@ -180,7 +180,9 @@ def results_summary(request, ensayo_id):
             'tipo': row.get('pregunta__tipo') or '',
             'respondidas': total_q,
             'correctas': correct_q,
-            'porcentaje_correctas': pct_q
+            'porcentaje_correctas': pct_q,
+            'explicacion_texto': row.get('pregunta_explicacion_texto') or '',
+            'explicacion_url': row.get('pregunta_explicacion_url') or ''
         })
 
 

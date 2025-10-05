@@ -23,9 +23,11 @@ class Pregunta(models.Model):
     correct_answer = models.CharField(max_length=1, default="A")  
     tipo = models.CharField(max_length=50, choices=[("alternativa_simple", "Alternativa Simple")])
     etiquetas = models.ManyToManyField(Etiqueta, blank=True, related_name='preguntas')
+    explicacion_texto = models.TextField(blank=True, default='')
+    explicacion_url = models.URLField(blank=True, default='')
 
     def __str__(self):
-        return f"{self.enunciado[:200]}..."
+        return (self.enunciado[:80] + '...') if len(self.enunciado) > 80 else self.enunciado
 class Intento(models.Model):
     estudiante = models.ForeignKey(Usuario, on_delete=models.CASCADE) 
     ensayo = models.ForeignKey(Ensayo, on_delete=models.CASCADE) 
