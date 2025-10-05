@@ -11,7 +11,7 @@ class PreguntaSerializer(serializers.ModelSerializer):
     opciones = OpcionSerializer(many=True, read_only=True)
     class Meta:
         model = Pregunta
-        fields = ('id', 'enunciado', 'tipo', 'opciones')
+        fields = ('id', 'enunciado', 'tipo', 'opciones', 'explicacion_texto', 'explicacion_url')
 
 class EnsayoSerializer(serializers.ModelSerializer):
     preguntas = PreguntaSerializer(many=True, read_only=True)

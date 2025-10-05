@@ -16,7 +16,8 @@ import ListaEnsayos from '@/views/ListaEnsayos.vue';
 import RendirEnsayo from '@/views/RendirEnsayo.vue';
 import ListaEnsayosDocente from '@/views/ListaEnsayosDocente.vue';
 import EnsayoResultados from '@/views/EnsayoResultados.vue';
-
+import CompletedEnsayos from '@/views/CompletedEnsayos.vue';
+import RevisionEnsayo from '@/views/RevisionEnsayo.vue';
 const routes = [
   { path: '/', component: HomePage },
   { path: '/como-funciona', component: ComoFunciona},
@@ -33,6 +34,8 @@ const routes = [
   { path: '/docente/editor-ensayos/:id', component: EditordeEnsayos, props: true},
   { path: '/ensayos/:materia', name: 'lista-ensayos', component: ListaEnsayos, props: route => ({ materia: route.params.materia }) },
   { path: '/alumno/ensayo/:id', name: 'rendir-ensayo', component: RendirEnsayo, props: true },
+  {path: '/revision', name: 'ensayos-completados', component: CompletedEnsayos },
+  { path: '/revision/:ensayoId/:resultadoId', name: 'revision-ensayo', component: RevisionEnsayo, props: true },
   {
   path: '/ensayos/:materia',
   name: 'lista-ensayos',

@@ -23,13 +23,11 @@ class ExamViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def submit_ensayo(request, ensayo_id):
     ensayo = get_object_or_404(Ensayo, pk=ensayo_id)
     alumno = request.user
-
 
     data = request.data
     if isinstance(data, list):
@@ -44,7 +42,6 @@ def submit_ensayo(request, ensayo_id):
         return Response({'error': 'Campo "respuestas" debe ser una lista.'},
                         status=status.HTTP_400_BAD_REQUEST)
 
-
     resultado = Resultado.objects.create(ensayo=ensayo, alumno=alumno, puntaje_total=0)
 
     total_preguntas = ensayo.preguntas.count()
@@ -55,7 +52,7 @@ def submit_ensayo(request, ensayo_id):
         if isinstance(rp, str):
             try:
                 rp = json.loads(rp)
-            except Exception as e:
+            except Exception:
                 errores.append({'index': idx, 'error': 'Elemento no parseable como JSON', 'raw': str(rp)})
                 continue
 
@@ -66,7 +63,6 @@ def submit_ensayo(request, ensayo_id):
         pregunta_id = rp.get('pregunta_id')
         opcion_id = rp.get('opcion_id')
         texto = rp.get('texto', None)
-
 
         if pregunta_id is None:
             errores.append({'index': idx, 'error': 'Falta pregunta_id', 'data': rp})
@@ -106,7 +102,6 @@ def submit_ensayo(request, ensayo_id):
         if correcta:
             correctas += 1
 
-
         Respuesta.objects.create(
             resultado=resultado,
             pregunta=pregunta,
@@ -123,17 +118,15 @@ def submit_ensayo(request, ensayo_id):
     resultado.puntaje_total = puntaje
     resultado.save()
 
-
     resp = {
         'resultado_id': resultado.id,
         'puntaje': resultado.puntaje_total,
-        'fecha': resultado.fecha.isoformat()
+        'fecha': resultado.fecha.isoformat() if getattr(resultado, 'fecha', None) else None
     }
     if errores:
         resp['errores'] = errores
 
     return Response(resp, status=status.HTTP_201_CREATED)
-
 
 
 @api_view(['GET'])
@@ -147,7 +140,7 @@ def results_summary(request, ensayo_id):
 
     total_participantes = Resultado.objects.filter(ensayo=ensayo).values('alumno').distinct().count()
 
-
+    # Agregación por tipo de pregunta
     tipos_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
         .values('pregunta__tipo') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
@@ -164,9 +157,9 @@ def results_summary(request, ensayo_id):
             'porcentaje_correctas': pct_type
         })
 
-
+    # Agregación por pregunta
     preguntas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
-        .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo') \
+        .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo', 'pregunta__explicacion_texto', 'pregunta__explicacion_url') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
 
     by_question = []
@@ -180,10 +173,12 @@ def results_summary(request, ensayo_id):
             'tipo': row.get('pregunta__tipo') or '',
             'respondidas': total_q,
             'correctas': correct_q,
-            'porcentaje_correctas': pct_q
+            'porcentaje_correctas': pct_q,
+            'explicacion_texto': row.get('pregunta__explicacion_texto') or '',
+            'explicacion_url': row.get('pregunta__explicacion_url') or ''
         })
 
-
+    # Agregación por etiqueta (tag)
     etiquetas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
         .values('pregunta__etiquetas__id', 'pregunta__etiquetas__nombre') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True))) \
@@ -214,12 +209,12 @@ def results_summary(request, ensayo_id):
     })
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def question_breakdown(request, ensayo_id, pregunta_id):
     ensayo = get_object_or_404(Ensayo, pk=ensayo_id)
     pregunta = get_object_or_404(Pregunta, pk=pregunta_id, ensayo=ensayo)
+
     user = request.user
     if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
         return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
@@ -247,3 +242,92 @@ def question_breakdown(request, ensayo_id, pregunta_id):
         'porcentaje_correctos': porcentaje_correctos,
         'opciones': opciones_data
     })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def ensayos_completados(request):
+    usuario = request.user
+    resultados = Resultado.objects.filter(alumno=usuario).order_by('-fecha')
+    data = []
+    for r in resultados:
+        data.append({
+            'resultado_id': r.id,
+            'ensayo_id': r.ensayo.id,
+            'ensayo_titulo': getattr(r.ensayo, 'titulo', ''),
+            'puntaje': r.puntaje_total,
+            'fecha': r.fecha.isoformat() if getattr(r, 'fecha', None) else str(r.pk)
+        })
+    return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def review_resultado(request, ensayo_id, resultado_id):
+    try:
+        ensayo = get_object_or_404(Ensayo, pk=ensayo_id)
+        resultado = get_object_or_404(Resultado, pk=resultado_id, ensayo=ensayo)
+
+        user = request.user
+        # permiso: alumno propietario o docente/staff
+        if not (resultado.alumno == user or getattr(user, 'rol', None) == 'docente' or user.is_staff):
+            return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+
+        respuestas = Respuesta.objects.filter(resultado=resultado).select_related('pregunta', 'opcion')
+        preguntas_data = []
+        for resp in respuestas:
+            preg = resp.pregunta
+            opcion = resp.opcion
+            enunciado = getattr(preg, 'enunciado', getattr(preg, 'texto', ''))
+            preguntas_data.append({
+                'pregunta_id': preg.id,
+                'enunciado': enunciado,
+                'tipo': getattr(preg, 'tipo', ''),
+                'opcion_elegida_id': opcion.id if opcion else None,
+                'opcion_elegida_texto': getattr(opcion, 'texto', '') if opcion else (resp.texto or ''),
+                'correcta': bool(resp.correcta),
+                'texto_alumno': resp.texto or '',
+                'explicacion_texto': getattr(preg, 'explicacion_texto', '') or '',
+                'explicacion_url': getattr(preg, 'explicacion_url', '') or ''
+            })
+
+        resp_obj = {
+            'resultado_id': resultado.id,
+            'ensayo_id': ensayo.id,
+            'ensayo_titulo': getattr(ensayo, 'titulo', ''),
+            'puntaje': resultado.puntaje_total,
+            'fecha': resultado.fecha.isoformat() if getattr(resultado, 'fecha', None) else '',
+            'preguntas': preguntas_data
+        }
+        return Response(resp_obj)
+    except Exception as e:
+        logger.exception("Error en review_resultado: %s", e)
+        return Response({'detail': 'Error interno al obtener revisión'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def editar_explicacion(request, pregunta_id):
+    user = request.user
+    if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
+        return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+
+    pregunta = get_object_or_404(Pregunta, pk=pregunta_id)
+    texto = request.data.get('texto', None)
+    url = request.data.get('url', None)
+
+    if texto is None and url is None:
+        return Response({'detail': 'Se requiere "texto" o "url" en el body'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if texto is not None:
+        pregunta.explicacion_texto = texto
+    if url is not None:
+        pregunta.explicacion_url = url
+
+    pregunta.save()
+
+    return Response({
+        'pregunta_id': pregunta.id,
+        'explicacion_texto': pregunta.explicacion_texto,
+        'explicacion_url': pregunta.explicacion_url
+    }, status=status.HTTP_200_OK)
