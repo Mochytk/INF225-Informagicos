@@ -7,8 +7,8 @@
             <RouterLink to="/alumno/materias">
                 <button>Realizar Ensayo</button>
             </RouterLink>
-            <RouterLink to="/alumno/resultados">
-                <button>Ver Resultados(WIP)</button>
+            <RouterLink to="/revision">
+                <button>Revisión de ensayos</button>
             </RouterLink>
             <button @click="logout">Cerrar Sesión</button>
         </div>
