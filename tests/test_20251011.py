@@ -1,92 +1,92 @@
-import unittest
-import requests
-import json
+# app/paes/ensayos/tests.py
 
-# URL base de la API. Asegúrate de que tu servidor de desarrollo esté corriendo.
-BASE_URL = "http://127.0.0.1:8000/api/ensayos/"
+from django.test import TestCase
+from django.urls import reverse
+from rest_framework.test import APIClient
+from rest_framework import status
+from usuarios.models import Usuario
+from .models import Ensayo, Pregunta, Opcion, Resultado
 
-class TestEnsayoAPI(unittest.TestCase):
+class SubmitEnsayoAPITest(TestCase):
     """
-    Clase de pruebas para el endpoint de Ensayos (/api/ensayos/).
+    Pruebas para el endpoint de envío de ensayos (/api/ensayos/<id>/submit/).
     """
 
     @classmethod
     def setUpClass(cls):
-        """
-        Configura los datos iniciales para todas las pruebas de la clase.
-        Este método se ejecuta una sola vez al inicio.
-        [cite: 28]
-        """
-        print("Iniciando pruebas para el API de Ensayos.")
-        # Podrías crear aquí datos de prueba necesarios, como preguntas,
-        # para asegurar un estado consistente. Por ahora, lo dejamos como ejemplo.
-        cls.datos_ensayo_valido = {
-            "nombre": "Ensayo de Prueba Hito 3",
-            "preguntas": [] # Asume que puedes crear un ensayo sin preguntas o ajusta según tu modelo
-        }
-        cls.datos_ensayo_invalido = {
-            "preguntas": []
-        }
+        super().setUpClass()
+        print("\n--- Iniciando Pruebas: Envío de Ensayos ---")
+        cls.alumno = Usuario.objects.create_user(username='alumno_test', password='password', rol='alumno')
+        cls.ensayo = Ensayo.objects.create(titulo='Ensayo de Prueba Hito 3')
+        cls.pregunta = Pregunta.objects.create(ensayo=cls.ensayo, enunciado='Pregunta de prueba', tipo='alternativa_simple')
+        cls.opcion_correcta = Opcion.objects.create(pregunta=cls.pregunta, texto='Opción Correcta', es_correcta=True)
+        cls.opcion_incorrecta = Opcion.objects.create(pregunta=cls.pregunta, texto='Opción Incorrecta', es_correcta=False)
 
     @classmethod
     def tearDownClass(cls):
-        """
-        Limpia los datos después de que todas las pruebas de la clase han terminado.
-        Este método se ejecuta una sola vez al final.
-        [cite: 28]
-        """
-        print("Finalizando pruebas para el API de Ensayos.")
-        # Aquí podrías eliminar los datos de prueba creados en setUpClass.
+        super().tearDownClass()
+        print("--- Finalizando Pruebas: Envío de Ensayos ---")
 
-    def test_1_crear_ensayo_exitoso(self):
-        """
-        Prueba 3: Verifica la creación exitosa de un ensayo con datos válidos.
-        """
-        print("Ejecutando: test_1_crear_ensayo_exitoso")
-        response = requests.post(BASE_URL, json=self.datos_ensayo_valido)
-        self.assertEqual(response.status_code, 201)
-        response_data = response.json()
-        self.assertIn("id", response_data)
-        self.assertEqual(response_data["nombre"], self.datos_ensayo_valido["nombre"])
-        # Guardamos el ID para usarlo en otra prueba si es necesario
-        TestEnsayoAPI.id_ensayo_creado = response_data['id']
+    def setUp(self):
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.alumno)
+        self.submit_url = reverse('submit_ensayo', kwargs={'ensayo_id': self.ensayo.id})
 
-    def test_2_crear_ensayo_invalido(self):
-        """
-        Prueba 4: Verifica que la API rechace la creación de un ensayo con datos inválidos.
-        """
-        print("Ejecutando: test_2_crear_ensayo_invalido")
-        response = requests.post(BASE_URL, json=self.datos_ensayo_invalido)
-        # Se espera una excepción o error por parte del cliente 
-        self.assertEqual(response.status_code, 400)
-
-    def test_3_listar_ensayos_con_contenido(self):
-        """
-        Prueba 1: Verifica que se pueda obtener una lista de ensayos.
-        """
-        print("Ejecutando: test_3_listar_ensayos_con_contenido")
-        # Aseguramos que haya al menos un ensayo creado (el de la prueba 1)
-        response = requests.get(BASE_URL)
-        self.assertEqual(response.status_code, 200)
-        self.assertIsInstance(response.json(), list)
-        self.assertGreater(len(response.json()), 0) # La lista no debe estar vacía
-
-    def test_4_recuperar_ensayo_existente(self):
-        """
-        Prueba adicional: Verifica que se pueda recuperar un ensayo específico por su ID.
-        """
-        print("Ejecutando: test_4_recuperar_ensayo_existente")
-        # Usamos el ID del ensayo creado en la primera prueba
-        if hasattr(TestEnsayoAPI, 'id_ensayo_creado'):
-            url = f"{BASE_URL}{TestEnsayoAPI.id_ensayo_creado}/"
-            response = requests.get(url)
-            self.assertEqual(response.status_code, 200)
-            response_data = response.json()
-            self.assertEqual(response_data['id'], TestEnsayoAPI.id_ensayo_creado)
-        else:
-            self.skipTest("No se pudo ejecutar porque no se creó un ensayo previamente.")
+    def test_submit_ensayo_exitoso(self):
+        """Prueba 1: Envío exitoso de un ensayo con datos válidos."""
+        print("▶️ Ejecutando: test_submit_ensayo_exitoso")
+        data = [{'pregunta_id': self.pregunta.id, 'opcion_id': self.opcion_correcta.id}]
+        response = self.client.post(self.submit_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn('resultado_id', response.data)
+        self.assertEqual(response.data['puntaje'], 1000)
+        print("✅ Resultado: ¡Correcto!")
 
 
-if __name__ == '__main__':
-    # Esto permite ejecutar las pruebas directamente desde la línea de comandos
-    unittest.main(verbosity=2)
+    def test_submit_ensayo_payload_invalido(self):
+        """Prueba 2: La API rechaza un payload inválido."""
+        print("▶️ Ejecutando: test_submit_ensayo_payload_invalido")
+        data = {'respuestas': 'esto-no-es-una-lista'}
+        response = self.client.post(self.submit_url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+        print("✅ Resultado: ¡Correcto!")
+
+
+class EnsayosCompletadosAPITest(TestCase):
+    """
+    Pruebas para el endpoint de ensayos completados (/api/ensayos/completados/).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        print("\n--- Iniciando Pruebas: Historial de Ensayos Completados ---")
+        cls.alumno = Usuario.objects.create_user(username='alumno_historial', password='password', rol='alumno')
+        cls.ensayo = Ensayo.objects.create(titulo='Ensayo para Historial')
+        cls.resultado = Resultado.objects.create(ensayo=cls.ensayo, alumno=cls.alumno, puntaje_total=850)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        print("--- Finalizando Pruebas: Historial de Ensayos Completados ---")
+
+    def setUp(self):
+        self.client = APIClient()
+        self.completados_url = reverse('ensayos_completados')
+
+    def test_ensayos_completados_usuario_autenticado(self):
+        """Prueba 3: Un usuario autenticado puede ver sus ensayos completados."""
+        print("▶️ Ejecutando: test_ensayos_completados_usuario_autenticado")
+        self.client.force_authenticate(user=self.alumno)
+        response = self.client.get(self.completados_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        print("✅ Resultado: ¡Correcto!")
+
+    def test_ensayos_completados_usuario_no_autenticado(self):
+        """Prueba 4: Un usuario no autenticado no puede acceder."""
+        print("▶️ Ejecutando: test_ensayos_completados_usuario_no_autenticado")
+        response = self.client.get(self.completados_url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        print("✅ Resultado: ¡Correcto!")
