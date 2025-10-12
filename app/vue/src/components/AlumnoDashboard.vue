@@ -12,6 +12,7 @@
             </RouterLink>
             <button @click="logout">Cerrar Sesión</button>
         </div>
+    <br></br>
     </div>
 </template>
 
