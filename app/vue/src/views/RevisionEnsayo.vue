@@ -1,6 +1,7 @@
 <template>
   <div class="revision-ensayo">
     <h2>Revisión — {{ resumen.titulo || ('Ensayo ' + ensayoId) }}</h2>
+
     <div class="controls">
       <label>Filtrar:
         <select v-model="filtro">
@@ -16,28 +17,41 @@
     <ul v-else class="preg-list">
       <li v-for="q in filteredQuestions" :key="q.pregunta_id" :class="['preg', q.correcta ? 'ok' : 'ko']">
         <div class="preg-header">
-          <div class="enunciado">{{ q.texto || q.enunciado }}</div>
+          <div class="enunciado">{{ q.enunciado }}</div>
           <div class="status">{{ q.correcta ? 'Correcta' : 'Incorrecta' }}</div>
         </div>
 
         <div class="respuesta">
           <strong>Tu respuesta:</strong>
-          <span>{{ q.respuesta_texto || q.opcion_texto || q.respuesta || '—' }}</span>
+          <span v-if="q.opcion_elegida_texto && q.opcion_elegida_texto.trim() !== ''">
+            {{ q.opcion_elegida_texto }}
+          </span>
+          <span v-else class="muted">Sin respuesta</span>
         </div>
+        <ul v-if="q.all_options && q.all_options.length" class="opciones-list">
+          <li v-for="op in q.all_options" :key="op.id">
+            <span :class="{'op-correct': op.id === q.correct_option_id, 'op-selected': op.id === q.opcion_elegida_id}">
+              {{ op.texto }}
+            </span>
+            <small v-if="op.id === q.correct_option_id"> — (Respuesta correcta)</small>
+            <small v-if="op.id === q.opcion_elegida_id"> — (Elegida)</small>
+          </li>
+        </ul>
 
         <div class="acciones">
-          <button @click="toggleExp(q.pregunta_id)">Ver explicación</button>
+          <button @click="toggleExp(q.pregunta_id)">{{ openExp === q.pregunta_id ? 'Ocultar explicación' : 'Ver explicación' }}</button>
 
-          <!-- si es docente, mostrar botón editar -->
-          <button v-if="esDocente" @click="editarMode = editarMode === q.pregunta_id ? null : q.pregunta_id">
+          <button v-if="esDocente" @click="toggleEditMode(q)">
             {{ editarMode === q.pregunta_id ? 'Cancelar' : 'Editar explicación' }}
           </button>
         </div>
 
         <div v-if="openExp === q.pregunta_id" class="explicacion">
-          <p v-if="q.explicacion_texto">{{ q.explicacion_texto }}</p>
-          <p v-if="q.explicacion_url">Video/Link: <a :href="q.explicacion_url" target="_blank">{{ q.explicacion_url }}</a></p>
-          <p v-if="!q.explicacion_texto && !q.explicacion_url">No hay explicación disponible.</p>
+          <p v-if="q.correct_option_text"><strong>Respuesta correcta:</strong> {{ q.correct_option_text }}</p>
+
+          <p v-if="q.explicacion_texto"><strong>Explicación:</strong> {{ q.explicacion_texto }}</p>
+          <p v-if="q.explicacion_url">Recurso: <a :href="q.explicacion_url" target="_blank">{{ q.explicacion_url }}</a></p>
+          <p v-if="!q.explicacion_texto && !q.explicacion_url && !q.correct_option_text">No hay explicación disponible.</p>
         </div>
 
         <div v-if="editarMode === q.pregunta_id" class="editor">
@@ -50,15 +64,16 @@
         </div>
       </li>
     </ul>
-  <br></br>
-  <br></br>
+
+    <br /><br />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { getRevision, editarExplicacion } from '@/api/ensayos';
+import axios from 'axios';
+import { getRevision } from '@/api/ensayos'; 
 
 const route = useRoute();
 const router = useRouter();
@@ -66,7 +81,7 @@ const ensayoId = Number(route.params.ensayoId);
 const resultadoId = Number(route.params.resultadoId);
 
 const resumen = ref({});
-const preguntas = ref([]); // array con { pregunta_id, texto, correcta, respuesta_texto, opcion_texto, explicacion_texto, explicacion_url }
+const preguntas = ref([]);
 const loading = ref(false);
 
 const filtro = ref('all');
@@ -75,6 +90,7 @@ const editarMode = ref(null);
 const editText = ref('');
 const editUrl = ref('');
 
+const token = localStorage.getItem('token') || '';
 const esDocente = (localStorage.getItem('rol') || '').toLowerCase() === 'docente' || JSON.parse(localStorage.getItem('is_staff') || 'false');
 
 const filteredQuestions = computed(() => {
@@ -93,10 +109,25 @@ function cancelEdit() {
   editUrl.value = '';
 }
 
+function toggleEditMode(q) {
+  if (editarMode.value === q.pregunta_id) {
+    cancelEdit();
+    return;
+  }
+  editarMode.value = q.pregunta_id;
+  editText.value = q.explicacion_texto || '';
+  editUrl.value = q.explicacion_url || '';
+}
+
+
 async function guardarExplicacion(preguntaId) {
   try {
-    await editarExplicacion(preguntaId, { explicacion_texto: editText.value, explicacion_url: editUrl.value });
-    // actualizar local copy
+    const payload = { texto: editText.value || '', url: editUrl.value || '' };
+    const headers = { Authorization: token ? `Token ${token}` : '' , 'Content-Type': 'application/json' };
+    // PATCH
+    await axios.patch(`http://127.0.0.1:8000/api/preguntas/${preguntaId}/explicacion/`, payload, { headers });
+
+    // actualizar copia local
     const q = preguntas.value.find(x => x.pregunta_id === preguntaId);
     if (q) {
       q.explicacion_texto = editText.value;
@@ -106,34 +137,41 @@ async function guardarExplicacion(preguntaId) {
     alert('Explicación guardada');
   } catch (err) {
     console.error('Error guardando explicación', err);
-    alert('No se pudo guardar explicación. Revisa la consola.');
+    alert('No se pudo guardar explicación. Revisa la consola (500/403).');
   }
 }
+
 
 async function load() {
   loading.value = true;
   try {
     const data = await getRevision(ensayoId, resultadoId);
-    // Esperamos un JSON con resumen + preguntas. Ajusta según tu backend:
-    // ej. { resumen: {...}, preguntas: [...] } o directamente { preguntas: [...] }
-    resumen.value = data.resumen || { titulo: data.titulo || '' };
-    // Intentar extraer preguntas de varias formas:
-    preguntas.value = data.preguntas || data.items || data.questions || data.lista_preguntas || [];
 
-    // normalizar campos si es necesario (ejemplo de mapeo)
-    preguntas.value = preguntas.value.map(p => ({
-      pregunta_id: p.pregunta_id ?? p.id,
-      texto: p.texto ?? p.enunciado ?? p.pregunta_texto,
-      correcta: !!p.correcta,
-      respuesta_texto: p.respuesta_texto ?? p.respuesta ?? p.alumno_respuesta ?? '',
-      opcion_texto: p.opcion_texto ?? (p.opcion ? p.opcion.texto : '') ?? '',
-      explicacion_texto: p.explicacion_texto ?? p.explicacion?.texto ?? '',
-      explicacion_url: p.explicacion_url ?? p.explicacion?.url ?? ''
-    }));
+    resumen.value = { titulo: data.ensayo_titulo || data.titulo || '' };
+
+    const raw = data.preguntas || [];
+    preguntas.value = raw.map(p => {
+      return {
+        pregunta_id: p.pregunta_id ?? p.id,
+        enunciado: p.enunciado ?? p.texto ?? p.question_text ?? '',
+        tipo: p.tipo ?? '',
+
+        opcion_elegida_texto: (p.opcion_elegida_texto ?? p.opcion_texto ?? p.texto_alumno ?? '') || '',
+        opcion_elegida_id: p.opcion_elegida_id ?? null,
+
+        correct_option_id: p.correct_option_id ?? null,
+        correct_option_text: p.correct_option_text ?? '',
+        correcta: !!p.correcta,
+        texto_alumno: p.texto_alumno ?? p.opcion_elegida_texto ?? '',
+        explicacion_texto: p.explicacion_texto ?? '',
+        explicacion_url: p.explicacion_url ?? '',
+        all_options: p.all_options ?? (p.opciones ?? [])
+      };
+    });
   } catch (err) {
-    console.error('Error cargando revisión', err);
+    console.error('Error cargando revisión ', err);
     alert('No se pudo cargar la revisión. Revisa la consola.');
-    router.push('/alumno'); // volver al dashboard
+    router.push('/alumno');
   } finally {
     loading.value = false;
   }
@@ -160,4 +198,10 @@ onMounted(() => {
 .acciones { margin-top:8px; display:flex; gap:8px; }
 .editor textarea, .editor input { width:100%; margin-top:6px; padding:6px; border-radius:6px; }
 .editor-actions { margin-top:8px; display:flex; gap:8px; }
+.opciones-list { margin-top:8px; padding-left:18px; }
+.opciones-list li { margin-bottom:6px; }
+.op-correct { font-weight:700; color:#2ecc71; }
+.op-selected { text-decoration: underline; }
+.muted { color: #bbb; font-style: italic; }
+.explicacion { margin-top:8px; padding:10px; background: rgba(0,0,0,0.15); border-radius:6px; }
 </style>

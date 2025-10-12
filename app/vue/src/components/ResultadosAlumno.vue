@@ -14,7 +14,6 @@ data() {
 },
 
 mounted() {
-    // Protección: si no está logeado, redirige
     if (!localStorage.getItem('token') || localStorage.getItem('rol') !== 'alumno') {
         console.warn('Acceso restringido: no tienes permiso para ver esta página.');
         alert('Acceso restringido: no tienes permiso para ver esta página.');

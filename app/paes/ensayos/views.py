@@ -140,7 +140,7 @@ def results_summary(request, ensayo_id):
 
     total_participantes = Resultado.objects.filter(ensayo=ensayo).values('alumno').distinct().count()
 
-    # Agregación por tipo de pregunta
+
     tipos_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
         .values('pregunta__tipo') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
@@ -157,7 +157,7 @@ def results_summary(request, ensayo_id):
             'porcentaje_correctas': pct_type
         })
 
-    # Agregación por pregunta
+    
     preguntas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
         .values('pregunta__id', 'pregunta__enunciado', 'pregunta__tipo', 'pregunta__explicacion_texto', 'pregunta__explicacion_url') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True)))
@@ -178,7 +178,7 @@ def results_summary(request, ensayo_id):
             'explicacion_url': row.get('pregunta__explicacion_url') or ''
         })
 
-    # Agregación por etiqueta (tag)
+    
     etiquetas_agg = Respuesta.objects.filter(pregunta__ensayo=ensayo) \
         .values('pregunta__etiquetas__id', 'pregunta__etiquetas__nombre') \
         .annotate(respondidas=Count('id'), correctas=Count('id', filter=Q(correcta=True))) \
@@ -269,7 +269,7 @@ def review_resultado(request, ensayo_id, resultado_id):
         resultado = get_object_or_404(Resultado, pk=resultado_id, ensayo=ensayo)
 
         user = request.user
-        # permiso: alumno propietario o docente/staff
+        
         if not (resultado.alumno == user or getattr(user, 'rol', None) == 'docente' or user.is_staff):
             return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -278,17 +278,41 @@ def review_resultado(request, ensayo_id, resultado_id):
         for resp in respuestas:
             preg = resp.pregunta
             opcion = resp.opcion
-            enunciado = getattr(preg, 'enunciado', getattr(preg, 'texto', ''))
+                       
+            if opcion:
+                opcion_elegida_texto = getattr(opcion, 'texto', '') or ''
+                opcion_elegida_id = opcion.id
+            else:
+                opcion_elegida_texto = resp.texto or ''
+                opcion_elegida_id = None
+
+
+            correct_option = None
+            opciones_list = []
+            for op in preg.opciones.all():
+                opciones_list.append({
+                    'id': op.id,
+                    'texto': getattr(op, 'texto', '') or ''
+                })
+                if getattr(op, 'es_correcta', False):
+                    correct_option = op
+
+            correct_option_id = correct_option.id if correct_option else None
+            correct_option_text = getattr(correct_option, 'texto', '') if correct_option else ''
+
             preguntas_data.append({
                 'pregunta_id': preg.id,
-                'enunciado': enunciado,
+                'enunciado': getattr(preg, 'enunciado', getattr(preg, 'texto', '')),
                 'tipo': getattr(preg, 'tipo', ''),
-                'opcion_elegida_id': opcion.id if opcion else None,
-                'opcion_elegida_texto': getattr(opcion, 'texto', '') if opcion else (resp.texto or ''),
+                'opcion_elegida_id': opcion_elegida_id,
+                'opcion_elegida_texto': opcion_elegida_texto,
+                'correct_option_id': correct_option_id,
+                'correct_option_text': correct_option_text,
                 'correcta': bool(resp.correcta),
                 'texto_alumno': resp.texto or '',
                 'explicacion_texto': getattr(preg, 'explicacion_texto', '') or '',
-                'explicacion_url': getattr(preg, 'explicacion_url', '') or ''
+                'explicacion_url': getattr(preg, 'explicacion_url', '') or '',
+                'all_options': opciones_list,
             })
 
         resp_obj = {
@@ -303,7 +327,6 @@ def review_resultado(request, ensayo_id, resultado_id):
     except Exception as e:
         logger.exception("Error en review_resultado: %s", e)
         return Response({'detail': 'Error interno al obtener revisión'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
