@@ -1,0 +1,21 @@
+**Como la captura de pantalla da error, lo cambiamos a un .txt copiando el resultado de la terminal**
+
+--- Iniciando Pruebas: Historial de Ensayos Completados ---
+▶️ Ejecutando: test_ensayos_completados_usuario_autenticado
+✅ Resultado: ¡Correcto!
+.▶️ Ejecutando: test_ensayos_completados_usuario_no_autenticado
+✅ Resultado: ¡Correcto!
+.--- Finalizando Pruebas: Historial de Ensayos Completados ---
+
+--- Iniciando Pruebas: Envío de Ensayos ---
+▶️ Ejecutando: test_submit_ensayo_exitoso
+✅ Resultado: ¡Correcto!
+.▶️ Ejecutando: test_submit_ensayo_payload_invalido
+✅ Resultado: ¡Correcto!
+.--- Finalizando Pruebas: Envío de Ensayos ---
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.126s
+
+OK
+Destroying test database for alias 'default'...
