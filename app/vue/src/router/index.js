@@ -43,6 +43,13 @@ const routes = [
   props: route => ({ materia: route.params.materia }),
 },
 {
+  path: '/docente/explicaciones',
+  name: 'DocenteExplicaciones',
+  component: () => import('@/views/DocenteExplicaciones.vue'),
+  meta: { requiresAuth: true, role: 'docente' }
+},
+
+{
   path: '/alumno/ensayo/:id',
   name: 'rendir-ensayo',
   component: RendirEnsayo,

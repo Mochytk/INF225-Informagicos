@@ -1,71 +1,84 @@
-// src/api/ensayos.js
+
 import axios from 'axios';
 
 const API_BASE = 'http://127.0.0.1:8000/api';
 
-// cliente axios reutilizable
-const apiClient = axios.create({
+
+const api = axios.create({
   baseURL: API_BASE,
-  timeout: 10000,
+
 });
 
-function authHeaders() {
+
+function authHeader() {
   const token = localStorage.getItem('token');
-  return token ? { Authorization: `Token ${token}` } : {};
+  return token ? { Authorization: 'Token ' + token } : {};
 }
+
+
 
 export async function fetchAllEnsayos() {
   try {
-    const resp = await apiClient.get('/exams/', { headers: authHeaders() });
+    const resp = await api.get('/exams/', { headers: { ...authHeader() } });
     return resp.data;
   } catch (err) {
-    const resp = await apiClient.get('/ensayos/', { headers: authHeaders() });
+
+    const resp = await api.get('/ensayos/', { headers: { ...authHeader() } });
     return resp.data;
   }
 }
 
 export async function fetchEnsayo(id) {
   try {
-    const resp = await apiClient.get(`/exams/${id}/`, { headers: authHeaders() });
+    const resp = await api.get(`/exams/${id}/`, { headers: { ...authHeader() } });
     return resp.data;
   } catch (err) {
-    const resp = await apiClient.get(`/ensayos/${id}/`, { headers: authHeaders() });
+    const resp = await api.get(`/ensayos/${id}/`, { headers: { ...authHeader() } });
     return resp.data;
   }
 }
 
 export async function submitEnsayo(ensayoId, respuestas) {
   const url = `/ensayos/${ensayoId}/submit/`;
-  // El backend acepta { "respuestas": [...] } o un array; ajusta si tu frontend manda distinto
-  const payload = { respuestas };
-  const resp = await apiClient.post(url, payload, { headers: { 'Content-Type': 'application/json', ...authHeaders() } });
+  const resp = await api.post(url, Array.isArray(respuestas) ? respuestas : { respuestas }, {
+    headers: { 'Content-Type': 'application/json', ...authHeader() }
+  });
   return resp.data;
 }
 
 export async function getResultsSummary(ensayoId) {
   const url = `/ensayos/${ensayoId}/results/summary/`;
-  const resp = await apiClient.get(url, { headers: authHeaders() });
+  const resp = await api.get(url, { headers: { ...authHeader() } });
   return resp.data;
 }
 
 export async function getQuestionBreakdown(ensayoId, preguntaId) {
   const url = `/ensayos/${ensayoId}/questions/${preguntaId}/breakdown/`;
-  const resp = await apiClient.get(url, { headers: authHeaders() });
+  const resp = await api.get(url, { headers: { ...authHeader() } });
   return resp.data;
 }
 
 export async function getEnsayosCompletados() {
-  const res = await apiClient.get('/ensayos/completados/', { headers: authHeaders() });
+  const res = await api.get('/ensayos/completados/', { headers: { ...authHeader() } });
   return res.data;
 }
 
 export async function getRevision(ensayoId, resultadoId) {
-  const res = await apiClient.get(`/ensayos/${ensayoId}/results/${resultadoId}/review/`, { headers: authHeaders() });
+  const res = await api.get(`/ensayos/${ensayoId}/results/${resultadoId}/review/`, { headers: { ...authHeader() } });
   return res.data;
 }
 
+
 export async function editarExplicacion(preguntaId, payload) {
-  // Uso PATCH por ser partial update; si tu backend espera PUT, cámbialo a apiClient.put(...)
-  const res = await apiClient.patch(`/preguntas/${preguntaId}/explicacion/`, payload, { headers: authHeaders() });
+  const url = `/preguntas/${preguntaId}/explicacion/`;
+
+
+  const body = {};
+  if ('texto' in payload) body.texto = payload.texto;
+  if ('url' in payload) body.url = payload.url;
+  if ('explicacion_texto' in payload) body.texto = payload.explicacion_texto;
+  if ('explicacion_url' in payload) body.url = payload.explicacion_url;
+
+  const res = await api.patch(url, body, { headers: { 'Content-Type': 'application/json', ...authHeader() } });
   return res.data;
 }

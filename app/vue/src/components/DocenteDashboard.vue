@@ -7,28 +7,37 @@
       <div class="nav-botones">
         <button class="nav-btn" @click="irAListaResultados">Ver resultados</button>
         <button class="nav-btn" @click="mostrarSeccionCrearEnsayo">Crear ensayo</button>
+        <button class="nav-btn" @click="irAExplicaciones">Editar explicaciones</button>
       </div>
 
       <button class="cerrar-sesion" @click="logout">Cerrar sesión</button>
     </div>
   </div>
-<div v-if="mostrarResultados" class="resultados-contenedor">
-</div>
-<div v-else class="creador-ensayos">
-  <h1>Crear ensayo</h1>
-  <p>Nota: la funcionalidad para crear y editar ensayos está en desarrollo.</p>
-  <div class="botones">
-    <RouterLink to="/docente/creador-ensayos">
-      <button>Crear nuevo ensayo</button>
-    </RouterLink>
-    <RouterLink to="/docente/editor-ensayos">
-      <button>Editar ensayo</button>
-    </RouterLink>
+
+  <div v-if="mostrarResultados" class="resultados-contenedor">
+
   </div>
-</div>
 
+  <div v-else class="creador-ensayos">
+    <h1>Crear ensayo</h1>
+    <p>Nota: la funcionalidad para crear y editar ensayos está en desarrollo.</p>
+    <div class="botones">
+      <RouterLink to="/docente/creador-ensayos">
+        <button>Crear nuevo ensayo</button>
+      </RouterLink>
 
+      <RouterLink to="/docente/editor-ensayos">
+        <button>Editar ensayo</button>
+      </RouterLink>
+
+     
+      <RouterLink to="/docente/explicaciones">
+        <button>Editar explicaciones</button>
+      </RouterLink>
+    </div>
+  </div>
 </template>
+
 <script setup>
 import { useRouter } from 'vue-router';
 const router = useRouter();
@@ -43,7 +52,20 @@ function irAListaResultados() {
   router.push({ name: 'lista-ensayos-docente' });
 }
 
+function irAExplicaciones() {
+  const rol = (localStorage.getItem('rol') || '').toLowerCase();
+  if (rol !== 'docente' && !JSON.parse(localStorage.getItem('is_staff') || 'false')) {
+    alert('Acceso restringido: sólo docentes');
+    router.push('/acceso-restringido');
+    return;
+  }
+  
+  router.push({ name: 'DocenteExplicaciones' }).catch(() => {
+    router.push('/docente/explicaciones');
+  });
+}
 </script>
+
 <script>
 export default {
   data() {
@@ -51,33 +73,33 @@ export default {
       nombreUsuario: localStorage.getItem('username') || 'Docente',
       mostrarResultados: true,
       resultados: [
-      { nombre: 'José', apellido: 'Yañez', puntaje: 750 },
-      { nombre: 'Martín', apellido: 'Ferrera', puntaje: 930 },
-      { nombre: 'Rodrigo', apellido: 'Caceres', puntaje: 1000 },
-      { nombre: 'Sergio', apellido: 'Rojas', puntaje: 640 },
-      { nombre: 'Jaime', apellido: 'Donoso', puntaje: 100 },
-      { nombre: 'Dan', apellido: 'Gonzalez', puntaje: 820 },
-      { nombre: 'Alonso', apellido: 'Fuenzalida', puntaje: 470 },
-      { nombre: 'Sebastian', apellido: 'Albornoz', puntaje: 220 },
-      { nombre: 'Ricardo', apellido: 'Salas', puntaje: 1000 },
-      { nombre: 'José Luis', apellido: 'Martí', puntaje: 160 },
-      { nombre: 'Viktor', apellido: 'Tapia', puntaje: 100 },
-      { nombre: 'Mauricio', apellido: 'Solar', puntaje: 120 },
-    ],
+        { nombre: 'José', apellido: 'Yañez', puntaje: 750 },
+        { nombre: 'Martín', apellido: 'Ferrera', puntaje: 930 },
+        { nombre: 'Rodrigo', apellido: 'Caceres', puntaje: 1000 },
+        { nombre: 'Sergio', apellido: 'Rojas', puntaje: 640 },
+        { nombre: 'Jaime', apellido: 'Donoso', puntaje: 100 },
+        { nombre: 'Dan', apellido: 'Gonzalez', puntaje: 820 },
+        { nombre: 'Alonso', apellido: 'Fuenzalida', puntaje: 470 },
+        { nombre: 'Sebastian', apellido: 'Albornoz', puntaje: 220 },
+        { nombre: 'Ricardo', apellido: 'Salas', puntaje: 1000 },
+        { nombre: 'José Luis', apellido: 'Martí', puntaje: 160 },
+        { nombre: 'Viktor', apellido: 'Tapia', puntaje: 100 },
+        { nombre: 'Mauricio', apellido: 'Solar', puntaje: 120 },
+      ],
     }
   },
   computed: {
     promedio() {
-    const puntajesValidos = this.resultados
-      .map(r => parseFloat(r.puntaje))
-      .filter(p => !isNaN(p) && isFinite(p));
+      const puntajesValidos = this.resultados
+        .map(r => parseFloat(r.puntaje))
+        .filter(p => !isNaN(p) && isFinite(p));
 
-    if (puntajesValidos.length === 0) return 0;
+      if (puntajesValidos.length === 0) return 0;
 
-    const suma = puntajesValidos.reduce((a, b) => a + b, 0);
-    return (suma / puntajesValidos.length).toFixed(1);
-  }
-},
+      const suma = puntajesValidos.reduce((a, b) => a + b, 0);
+      return (suma / puntajesValidos.length).toFixed(1);
+    }
+  },
   methods: {
     crearEnsayo() {
       alert("Funcionalidad para crear ensayo próximamente.");
@@ -105,8 +127,6 @@ export default {
   }
 }
 </script>
-
-
 
 <style scoped>
 
@@ -148,7 +168,6 @@ export default {
   font-weight: normal;
   font-size: 0.95em;
 }
-
 
 .nav-btn:hover {
   background-color: #e0e0e0;
