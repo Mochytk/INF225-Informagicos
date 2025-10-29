@@ -73,7 +73,7 @@ function finalizarEnsayo() {
 }
 
 function iniciarTemporizador() {
-  let tiempoRestante = 2400; // tiempo en segundos (por defecto: 40 minutos)
+  let tiempoRestante = 2400; 
   const temporizador = document.getElementById('t');
 
   const intervalo = setInterval(() => {

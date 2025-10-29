@@ -1,56 +1,68 @@
 <template>
   <div class="ensayo-resultados">
-    <h2>Resultados — {{ resumen.titulo || ('Ensayo ' + ensayoId) }}</h2>
-    <p v-if="resumen.total_participantes !== undefined">Participantes: {{ resumen.total_participantes }}</p>
-
-    <div v-if="loadingSummary" class="loading">Cargando resumen...</div>
-
-    <h3>Por etiquetas</h3>
-    <div v-if="!resumen.by_tag || resumen.by_tag.length === 0" class="no-data">No hay datos por etiquetas.</div>
-
-    <div v-if="resumen.by_tag && resumen.by_tag.length > 0" class="tags-grid">
-      <div v-for="(t, idx) in resumen.by_tag" :key="t.tag || idx" class="tag-card">
-        <div class="tag-header">
-          <strong>{{ t.tag || 'Sin etiqueta' }}</strong>
-          <div class="tag-meta">Respondidas: {{ t.respondidas ?? 0 }}</div>
-        </div>
-
-        <div class="tag-canvas-wrap">
-          <canvas :ref="el => setTagCanvas(el, idx)" class="tag-chart-canvas"></canvas>
-        </div>
-
-        <div class="tag-footer">
-          <div>Correctas: {{ (t.porcentaje_correctas ?? 0) }}%</div>
-          <div>Incorrectas: {{ (100 - (t.porcentaje_correctas ?? 0)).toFixed(1) }}%</div>
+    <div class="header-row">
+      <h2 class="titulo">Resultados — {{ resumen.titulo || ('Ensayo ' + ensayoId) }}</h2>
+      <div class="meta-right">
+        <div class="participantes" v-if="resumen.total_participantes !== undefined">
+          Participantes: <strong>{{ resumen.total_participantes }}</strong>
         </div>
       </div>
     </div>
 
-    <h3>Preguntas</h3>
-    <div v-if="preguntasList.length === 0" class="no-data">No hay datos por pregunta.</div>
+    <div v-if="loadingSummary" class="loading">Cargando resumen...</div>
 
-    <ul class="preg-list">
-      <li v-for="(p, idx) in preguntasList" :key="p.id" class="preg-item">
-        <div class="preg-meta">
-          <button class="preg-link" @click="fetchAndShowBreakdown(p.id)">
-            {{ idx+1 }}. {{ trim(p.texto || p.enunciado || 'Pregunta') }}
-          </button>
-          <span class="porc">{{ (p.porcentaje_correctos ?? 0) }}% correctas</span>
+    <section class="seccion">
+      <h3 class="seccion-titulo">Por etiquetas</h3>
+      <div v-if="!resumen.by_tag || resumen.by_tag.length === 0" class="no-data">No hay datos por etiquetas.</div>
+
+      <div v-if="resumen.by_tag && resumen.by_tag.length > 0" class="tags-grid">
+        <div v-for="(t, idx) in resumen.by_tag" :key="t.tag || idx" class="tag-card">
+          <div class="tag-header">
+            <strong class="tag-name">{{ t.tag || 'Sin etiqueta' }}</strong>
+            <div class="tag-meta">Respondidas: {{ t.respondidas ?? 0 }}</div>
+          </div>
+
+          <div class="tag-canvas-wrap">
+            <canvas :ref="el => setTagCanvas(el, idx)" class="tag-chart-canvas"></canvas>
+          </div>
+
+          <div class="tag-footer">
+            <div>Correctas: <strong>{{ (t.porcentaje_correctas ?? 0) }}%</strong></div>
+            <div>Incorrectas: <strong>{{ (100 - (t.porcentaje_correctas ?? 0)).toFixed(1) }}%</strong></div>
+          </div>
         </div>
-      </li>
-    </ul>
+      </div>
+    </section>
+
+    <section class="seccion">
+      <h3 class="seccion-titulo">Preguntas</h3>
+      <div v-if="preguntasList.length === 0" class="no-data">No hay datos por pregunta.</div>
+
+      <ul class="preg-list">
+        <li v-for="(p, idx) in preguntasList" :key="p.id" class="preg-item">
+          <div class="preg-meta">
+            <button class="preg-link nav-btn-small" @click="fetchAndShowBreakdown(p.id)">
+              {{ idx+1 }}. {{ trim(p.texto || p.enunciado || 'Pregunta') }}
+            </button>
+            <span class="porc">{{ (p.porcentaje_correctos ?? 0) }}% correctas</span>
+          </div>
+        </li>
+      </ul>
+    </section>
 
     <div v-if="loadingBreakdown" class="loading">Cargando desglose...</div>
 
     <div v-if="breakdownData" class="breakdown-area">
-      <h4>Desglose pregunta</h4>
+      <h4 class="seccion-titulo">Desglose pregunta</h4>
       <p class="break-text">{{ breakdownData.texto }}</p>
+
       <div class="canvas-wrap">
         <canvas ref="breakCanvas" class="break-canvas"></canvas>
       </div>
+
       <div class="break-stats">
-        <div v-for="(op, i) in breakdownData.opciones" :key="i">
-          • {{ op.texto || ('Opción ' + op.id) }} — {{ op.porcentaje }} %
+        <div v-for="(op, i) in breakdownData.opciones" :key="i" class="op-row">
+          • <strong>{{ op.texto || ('Opción ' + op.id) }}</strong> — {{ op.porcentaje }} %
         </div>
       </div>
     </div>
@@ -208,9 +220,10 @@ async function loadSummary() {
       tagCharts.value = [];
     }
 
+  
     setTimeout(() => {
       drawAllTagCharts();
-    }, 50);
+    }, 80);
 
   } catch (err) {
     console.error('Error cargando resumen', err);
@@ -317,14 +330,16 @@ function trim(s) {
 </script>
 
 <style scoped>
+
 .ensayo-resultados {
+  font-family: 'Segoe UI', sans-serif;
   color: white;
   padding: 24px;
   min-height: 60vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 18px;
 }
 
 .ensayo-resultados > * {
@@ -333,22 +348,26 @@ function trim(s) {
   box-sizing: border-box;
 }
 
-.canvas-wrap {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+.header-row {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
 }
 
-.break-canvas {
-  width: 100%;
-  max-width: 1100px;
-  height: 320px;
-  display: block;
-  margin: 12px 0;
-  background: rgba(255,255,255,0.02);
-  border-radius: 8px;
-  box-sizing: border-box;
+.titulo {
+  font-size: 1.6rem;
+  margin: 0;
 }
+
+.meta-right { text-align:right; }
+
+.participantes { font-size:0.95rem; opacity:0.95; }
+
+
+.seccion { width:100%; margin-top: 8px; }
+.seccion-titulo { font-size:1.1rem; margin: 8px 0; color: #eaf3ea; }
+
 
 .tags-grid {
   display: grid;
@@ -359,12 +378,14 @@ function trim(s) {
 }
 
 .tag-card {
-  background: rgba(255,255,255,0.02);
-  padding: 10px;
-  border-radius: 8px;
+  background: rgba(255,255,255,0.03);
+  padding: 12px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 200px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.16);
 }
 
 .tag-header {
@@ -372,26 +393,84 @@ function trim(s) {
   display:flex;
   justify-content: space-between;
   align-items:center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.tag-canvas-wrap { width: 100%; display:flex; justify-content:center; }
+.tag-name { font-size: 0.98rem; color: #f7f7f7; }
+.tag-meta { font-size: 0.86rem; opacity: 0.9; color: #dfe6ea; }
+
+.tag-canvas-wrap { width: 100%; display:flex; justify-content:center; align-items:center; }
 .tag-chart-canvas {
   width: 100%;
   max-width: 260px;
   height: 160px;
+  display: block;
   background: transparent;
+  border-radius: 8px;
+  box-sizing: border-box;
 }
 
-.tag-footer { margin-top: 8px; display:flex; gap:12px; justify-content:space-between; width:100%; font-size: 0.95em; }
 
-.loading { opacity: 0.85; margin: 8px 0; }
+.tag-footer { margin-top: 10px; display:flex; gap:12px; justify-content:space-between; width:100%; font-size: 0.95em; color:#e6f4ea; }
+
+
 .preg-list { list-style:none; padding:0; margin: 12px 0 0 0; }
-.preg-item { margin-bottom: 8px; padding: 8px; border-radius:6px; background: rgba(255,255,255,0.02); display:flex; justify-content:space-between; align-items:center; }
+.preg-item { margin-bottom: 8px; padding: 10px; border-radius:8px; background: rgba(255,255,255,0.02); display:flex; justify-content:space-between; align-items:center; }
 .preg-meta { display:flex; gap:12px; align-items:center; width:100%; justify-content:space-between; }
-.preg-link { text-align:left; background:transparent; border:none; color: #f0f0f0; cursor:pointer; font-weight: 500; padding:0; }
+
+.preg-link {
+  text-align:left;
+  background: transparent;
+  border: none;
+  color: #f0f0f0;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.nav-btn-small {
+  background-color: #f4f4f4;
+  color: #2c3e50;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+.nav-btn-small:hover { background:#e0e0e0; }
+
+
 .porc { font-weight:700; color:#e6f4ea; }
-.breakdown-area { margin-top: 14px; padding: 12px; background: rgba(0,0,0,0.25); border-radius:8px; }
-.break-text { opacity: 0.9; margin-bottom: 8px; }
-.no-data { opacity: 0.8; margin: 8px 0; text-align: center; }
+
+
+.breakdown-area { margin-top: 18px; padding: 14px; background: rgba(0,0,0,0.25); border-radius:10px; width:100%; box-sizing:border-box; }
+.break-text { opacity: 0.95; margin-bottom: 8px; color: #eef6ee; }
+
+
+.canvas-wrap, .tag-canvas-wrap { display:flex; justify-content:center; width:100%; }
+.break-canvas {
+  width: 100%;
+  max-width: 1100px;
+  height: 320px;
+  display: block;
+  margin: 12px 0;
+  background: rgba(255,255,255,0.02);
+  border-radius: 8px;
+  box-sizing: border-box;
+  max-height: 420px;
+}
+
+
+.loading { opacity: 0.85; margin: 8px 0; color: #dfeff0; }
+.no-data { opacity: 0.85; margin: 8px 0; color: #dfe6ea; text-align:center; }
+
+
+.break-stats { margin-top: 8px; display:flex; flex-direction:column; gap:6px; color: #dfe6ea; }
+.op-row { font-size: 0.95rem; }
+
+
+@media (max-width: 720px) {
+  .tag-chart-canvas { max-width: 200px; height: 140px; }
+  .break-canvas { height: 260px; }
+  .ensayo-resultados { padding: 16px; }
+}
 </style>

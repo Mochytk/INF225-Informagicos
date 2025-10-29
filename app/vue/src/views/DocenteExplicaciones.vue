@@ -1,7 +1,8 @@
-
 <template>
   <div class="docente-explicaciones">
-    <h2>Editar explicaciones — Docente</h2>
+    <div class="header-row">
+      <h2 class="titulo">Editar explicaciones — Docente</h2>
+    </div>
 
     <div v-if="!isDocente" class="forbidden">
       Acceso denegado. Se necesita rol docente.
@@ -9,8 +10,9 @@
 
     <div v-else>
       <div class="selector-ensayo">
-        <label>Seleccionar ensayo:
-          <select v-model="selectedEnsayoId" @change="onChangeEnsayo">
+        <label>
+          <span>Seleccionar ensayo:</span>
+          <select v-model="selectedEnsayoId" @change="onChangeEnsayo" class="select-input">
             <option value="">-- elige un ensayo --</option>
             <option v-for="e in ensayos" :key="e.id" :value="e.id">
               {{ e.title || e.titulo || e.name || ('Ensayo ' + e.id) }}
@@ -22,21 +24,25 @@
       <div v-if="loading" class="loading">Cargando...</div>
 
       <div v-if="summary && summary.by_question">
-        <h3>Preguntas de: {{ summary.titulo }}</h3>
+        <h3 class="subtitulo">Preguntas de: {{ summary.titulo }}</h3>
+
         <ul class="preg-list">
           <li v-for="q in preguntas" :key="q.pregunta_id" class="preg-item">
             <div class="preg-enunciado">{{ limit(q.texto || q.enunciado, 180) }}</div>
 
             <div class="exp-editor">
-              <label>Explicación (texto)</label>
-              <textarea v-model="q.edit_explicacion_texto" rows="3"></textarea>
+              <label class="lbl">Explicación (texto)</label>
+              <textarea v-model="q.edit_explicacion_texto" rows="3" class="txt-area"></textarea>
 
-              <label>Explicación (URL)</label>
-              <input v-model="q.edit_explicacion_url" placeholder="https://..." />
+              <label class="lbl">Explicación (URL)</label>
+              <input v-model="q.edit_explicacion_url" placeholder="https://..." class="txt-input" />
 
               <div class="actions">
-                <button @click="guardar(q)" :disabled="q.saving">Guardar</button>
-                <span v-if="q.saving">Guardando...</span>
+                <button class="save-btn" @click="guardar(q)" :disabled="q.saving">
+                  <span v-if="!q.saving">Guardar</span>
+                  <span v-else>Guardando...</span>
+                </button>
+
                 <span v-if="q.saved" class="ok">Guardado ✓</span>
                 <span v-if="q.error" class="err">Error</span>
               </div>
@@ -44,16 +50,20 @@
               <div class="current">
                 <strong>Actual:</strong>
                 <div v-if="q.explicacion_texto">{{ q.explicacion_texto }}</div>
-                <div v-if="q.explicacion_url">URL: <a :href="q.explicacion_url" target="_blank">{{ q.explicacion_url }}</a></div>
-                <div v-if="!q.explicacion_texto && !q.explicacion_url">Sin explicación</div>
+                <div v-if="q.explicacion_url">
+                  URL: <a :href="q.explicacion_url" target="_blank">{{ q.explicacion_url }}</a>
+                </div>
+                <div v-if="!q.explicacion_texto && !q.explicacion_url" class="sin-exp">
+                  Sin explicación
+                </div>
               </div>
             </div>
           </li>
         </ul>
       </div>
 
-      <div v-if="!loading && (!summary || (summary.by_question && summary.by_question.length === 0))">
-        <p>No hay preguntas o explicaciones para este ensayo.</p>
+      <div v-if="!loading && (!summary || (summary.by_question && summary.by_question.length === 0))" class="no-data">
+        No hay preguntas o explicaciones para este ensayo.
       </div>
     </div>
   </div>
@@ -71,7 +81,8 @@ const loading = ref(false);
 const summary = ref(null);
 const preguntas = ref([]);
 
-const isDocente = ((localStorage.getItem('rol') || '').toLowerCase() === 'docente') || JSON.parse(localStorage.getItem('is_staff') || 'false');
+const isDocente = ((localStorage.getItem('rol') || '').toLowerCase() === 'docente') ||
+  JSON.parse(localStorage.getItem('is_staff') || 'false');
 
 onMounted(async () => {
   if (!localStorage.getItem('token')) {
@@ -81,7 +92,6 @@ onMounted(async () => {
   if (!isDocente) return;
   try {
     const data = await fetchAllEnsayos();
-
     ensayos.value = Array.isArray(data) ? data : (data.results || []);
   } catch (err) {
     console.error('Error cargando ensayos', err);
@@ -128,13 +138,11 @@ async function guardar(q) {
       texto: q.edit_explicacion_texto || null,
       url: q.edit_explicacion_url || null
     };
-
     const res = await editarExplicacion(q.pregunta_id, payload);
-
     q.explicacion_texto = res.explicacion_texto ?? q.edit_explicacion_texto;
     q.explicacion_url = res.explicacion_url ?? q.edit_explicacion_url;
     q.saved = true;
-    setTimeout(() => q.saved = false, 2000);
+    setTimeout(() => (q.saved = false), 2000);
   } catch (err) {
     console.error('Error guardando explicación', err);
     q.error = true;
@@ -143,22 +151,176 @@ async function guardar(q) {
   }
 }
 
-function limit(s, n=140) {
-  return s && s.length>n ? s.slice(0,n)+'...' : (s||'');
+function limit(s, n = 140) {
+  return s && s.length > n ? s.slice(0, n) + '...' : s || '';
 }
 </script>
 
 <style scoped>
-.docente-explicaciones { color: white; padding: 20px; min-height: 60vh; }
-.selector-ensayo { margin-bottom: 20px; }
-.preg-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:14px; }
-.preg-item { background: rgba(255,255,255,0.03); padding:12px; border-radius:8px; }
-.preg-enunciado { font-weight:700; margin-bottom:8px; }
-.exp-editor textarea { width:100%; min-height:60px; padding:8px; border-radius:6px; }
-.exp-editor input { width:100%; padding:8px; border-radius:6px; margin-top:6px; }
-.actions { margin-top:8px; display:flex; gap:8px; align-items:center; }
-.actions button { background:#3498db; color:white; border:none; padding:8px 12px; border-radius:6px; cursor:pointer; }
-.actions .ok { color:#2ecc71; margin-left:8px; }
-.actions .err { color:#e74c3c; margin-left:8px; }
-.current { margin-top:10px; opacity:0.9; font-size:0.95em; }
+.docente-explicaciones {
+  font-family: 'Segoe UI', sans-serif;
+  color: white;
+  padding: 24px;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.titulo {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.selector-ensayo {
+  margin-top: 12px;
+  width: 100%;
+  max-width: 600px;
+  font-family: 'Segoe UI', sans-serif;
+  
+}
+
+.select-input {
+  font-family: 'Segoe UI', sans-serif;
+  background: rgba(255,255,255,0.08);
+  color: black;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+.select-input:hover {
+  background: rgba(255,255,255,0.15);
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.loading { opacity: 0.85; margin: 10px 0; color: #dfeff0; }
+.no-data { opacity: 0.8; margin: 12px 0; text-align: center; }
+
+.subtitulo {
+  font-size: 1.2rem;
+  margin: 16px 0 10px 0;
+  color: #eaf3ea;
+}
+
+
+.preg-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  max-width: 1000px;
+}
+
+.preg-item {
+  background: rgba(255,255,255,0.03);
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.preg-enunciado {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #f8f8f8;
+}
+
+.lbl {
+  font-weight: 500;
+  margin-top: 6px;
+  display: block;
+  color: #dfeff0;
+}
+
+.txt-area, .txt-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
+  color: #f7f7f7;
+  padding: 8px;
+  margin-top: 4px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.txt-area:focus, .txt-input:focus {
+  outline: none;
+  border-color: #4dd0e1;
+  background: rgba(255,255,255,0.1);
+}
+
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.save-btn {
+  background: #f4f4f4;
+  color: #2c3e50;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.save-btn:hover {
+  background: #e0e0e0;
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ok { color: #2ecc71; font-weight: 600; }
+.err { color: #e74c3c; font-weight: 600; }
+
+
+.current {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.95em;
+  color: #dfe6ea;
+}
+
+.sin-exp {
+  opacity: 0.8;
+  font-style: italic;
+}
+
+a {
+  color: #82d8f7;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+
+@media (max-width: 720px) {
+  .preg-item { padding: 12px; }
+  .titulo { font-size: 1.4rem; }
+}
 </style>
