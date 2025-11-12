@@ -13,6 +13,8 @@ import json
 
 logger = logging.getLogger(__name__)
 
+PERMISO_INSUF = 'Permisos insuficientes'
+
 
 class ExamViewSet(viewsets.ModelViewSet):
     """
@@ -136,7 +138,7 @@ def results_summary(request, ensayo_id):
 
     user = request.user
     if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
-        return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'detail': PERMISO_INSUF}, status=status.HTTP_403_FORBIDDEN)
 
     total_participantes = Resultado.objects.filter(ensayo=ensayo).values('alumno').distinct().count()
 
@@ -217,7 +219,7 @@ def question_breakdown(request, ensayo_id, pregunta_id):
 
     user = request.user
     if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
-        return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'detail': PERMISO_INSUF}, status=status.HTTP_403_FORBIDDEN)
 
     respuestas_qs = Respuesta.objects.filter(pregunta=pregunta)
     total = respuestas_qs.count()
@@ -271,7 +273,7 @@ def review_resultado(request, ensayo_id, resultado_id):
         user = request.user
         
         if not (resultado.alumno == user or getattr(user, 'rol', None) == 'docente' or user.is_staff):
-            return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': PERMISO_INSUF}, status=status.HTTP_403_FORBIDDEN)
 
         respuestas = Respuesta.objects.filter(resultado=resultado).select_related('pregunta', 'opcion')
         preguntas_data = []
@@ -333,7 +335,7 @@ def review_resultado(request, ensayo_id, resultado_id):
 def editar_explicacion(request, pregunta_id):
     user = request.user
     if not (getattr(user, 'rol', None) == 'docente' or user.is_staff):
-        return Response({'detail': 'Permisos insuficientes'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'detail': PERMISO_INSUF}, status=status.HTTP_403_FORBIDDEN)
 
     pregunta = get_object_or_404(Pregunta, pk=pregunta_id)
     texto = request.data.get('texto', None)
