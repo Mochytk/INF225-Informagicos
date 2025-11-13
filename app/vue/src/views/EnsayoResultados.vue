@@ -112,12 +112,27 @@ function safeDestroyChartOnCanvas(canvas) {
 
 function replaceCanvasNodeAndUpdateRef(canvasRefArray, idx) {
   const old = canvasRefArray.value[idx];
-  if (!old || !old.parentNode) return null;
+  if (!old) return null;
+
+  // Si el nodo no tiene parent, no podemos reemplazar
   const parent = old.parentNode;
+  if (!parent) return null;
+
   const newCanvas = old.cloneNode(false);
   newCanvas.className = old.className;
   newCanvas.style.cssText = old.style.cssText;
-  parent.replaceChild(newCanvas, old);
+
+  try {
+    if (typeof old.replaceWith === 'function') {
+      old.replaceWith(newCanvas);
+    } else {
+      parent.replaceChild(newCanvas, old);
+    }
+  } catch (err) {
+    // fallback por si algo raro ocurre
+    try { parent.replaceChild(newCanvas, old); } catch (e) { console.warn('replace fallback failed', e); return null; }
+  }
+
   canvasRefArray.value[idx] = newCanvas;
   return newCanvas;
 }
@@ -220,7 +235,6 @@ async function loadSummary() {
       tagCharts.value = [];
     }
 
-  
     setTimeout(() => {
       drawAllTagCharts();
     }, 80);
