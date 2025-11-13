@@ -125,7 +125,7 @@ function replaceCanvasNodeAndUpdateRef(canvasRefArray, idx) {
       old.replaceWith(newCanvas);
     } else {
       // Fallback para entornos más antiguos
-      parent.replaceChild(newCanvas, old);
+      old.replaceWith(newCanvas)
     }
   } catch (e) {
     console.warn('replace canvas fallback failed', e);
