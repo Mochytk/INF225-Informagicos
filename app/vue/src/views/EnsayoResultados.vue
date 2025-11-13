@@ -120,11 +120,11 @@ function replaceCanvasNodeAndUpdateRef(canvasRefArray, idx) {
   newCanvas.style.cssText = old.style.cssText;
 
   try {
-    // Preferimos replaceWith cuando esté disponible (API moderna).
+    
     if (typeof old.replaceWith === 'function') {
       old.replaceWith(newCanvas);
     } else {
-      // Fallback para entornos más antiguos
+      
       old.replaceWith(newCanvas)
     }
   } catch (e) {
