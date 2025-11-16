@@ -19,7 +19,7 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny] 
     def post(self, request):
         email = request.data.get('email')
-        contraseña = request.data.get('contraseña') or request.sata.get('contrasena') or request.data.get('password')
+        contraseña = request.data.get('contraseña') or request.data.get('contrasena') or request.data.get('password')
 
         print("🔹 Intento de login con email:", email)
         print("🔹 Contraseña recibida:", contraseña)
